@@ -5,6 +5,10 @@
  * Perform many essential front-end tasks with JavaScript, CSS, etc.
  */
 
+// We set a specific group for jquery, so our CDN work actually works.
+//define('JS_JQUERY', -10000);
+//define('JS_DRUPAL', -9000);
+
 
 /**
  * Implements hook_permission.
@@ -144,7 +148,7 @@ function magic_do_we_do_js_work() {
   if (path_is_admin(current_path()) && $admin == 0) {
     $do_we = FALSE;
   }
-  elseif ($custom_js_handling == 0) {
+  elseif ($custom_js_handling == FALSE) {
     $do_we = FALSE;
   }
   else {
@@ -194,7 +198,8 @@ function magic_aggregate_js_helper(&$js_groups) {
 function magic_template_process_html_override(&$vars) {
   $do_we = magic_do_we_do_js_work();
 
-  if ($do_we === FALSE) {
+
+  if ($do_we == FALSE) {
     template_process_html($vars);
     return ;
   }
