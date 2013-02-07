@@ -1,0 +1,227 @@
+<?php
+
+/**
+ * @file
+ * Perform many essential front-end tasks with JavaScript, CSS, etc.
+ */
+
+
+/**
+ * Implements hook_permission.
+ */
+function magic_permission() {
+  return array(
+    'administer magic' => array(
+      'title' => t('Administer the Magic module'),
+      'description' => t('Administer the magic module settings.'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_menu.
+ */
+function magic_menu() {
+  $items = array();
+
+  $items['admin/config/development/magic'] = array(
+    'title' => 'Magic Module Settings',
+    'description' => '',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('magic_admin'),
+    'access arguments' => array('administer magic'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  return $items;
+}
+
+function magic_admin() {
+
+  $form = array();
+
+  $form['javascript'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('JavaScript Settings'),
+    '#description' => t('A pile of JavaScript options for you to use and abuse. <div class="messages warning"><strong>WARNING:</strong> Some of these options may wind up breaking existing JavaScript. Use with caution.</div>'),
+  );
+
+  $form['javascript']['magic_custom_js_handling'] = array(
+    '#type' => 'radios',
+    '#title' => t('Custom JavaScript Handling'),
+    '#description' => t(''),
+    '#default_value' => variable_get('magic_custom_js_handling', 0),
+    '#options' => array(
+      0 => t('No custom handling'),
+      'footer' => t('Move all JavaScript to footer'),
+      'experimental' => t('Experimental handling (async and defer tags used)'),
+    ),
+  );
+
+  $form['javascript']['magic_libraries_head'] = array(
+    '#type' => 'radios',
+    '#title' => t('Leave libraries in head'),
+    '#description' => t('If experimental handling is chosen, or all JavaScript to move to the footer, then this checkbox will leave all the library JavaScript in the header. HIGHLY RECOMENDED'),
+    '#default_value' => variable_get('magic_libraries_head', 1),
+    '#options' => array(
+      0 => t('Leave libraries in footer'),
+      1 => t('Move libraries to header'),
+    ),
+  );
+
+
+  $form['javascript']['magic_js_on_admin'] = array(
+    '#type' => 'radios',
+    '#title' => t('Use JavaScript handling on admin pages'),
+    '#description' => t(''),
+    '#default_value' => variable_get('magic_js_on_admin', 0),
+    '#options' => array(
+      0 => t('Do not use on admin pages'),
+      1 => t('Use on admin pages'),
+    ),
+  );
+
+
+
+  return system_settings_form($form);
+}
+
+
+/**
+ * Implements hook_theme_registry_alter.
+ */
+function magic_theme_registry_alter(&$theme_registry) {
+
+  // Override template_process_html() in order to add support for all of the Awesome.
+  // Again, huge, amazing ups to the wizard Sebastian Siemssen (fubhy) for showing me how to do this.
+  if (($index = array_search('template_process_html', $theme_registry['html']['process functions'], TRUE)) !== FALSE) {
+    array_splice($theme_registry['html']['process functions'], $index, 1, 'magic_template_process_html_override');
+  }
+}
+
+/**
+ * Implements hook_element_info_alter().
+ */
+function magic_element_info_alter(&$elements) {
+  // if (theme_get_setting('magic_toggle_extension_css') && theme_get_setting('magic_media_queries_inline') && variable_get('preprocess_css', FALSE) && (!defined('MAINTENANCE_MODE') || MAINTENANCE_MODE != 'update')) {
+  //   array_unshift($elements['styles']['#pre_render'], 'magic_css_preprocessor');
+  // }
+
+
+  $elements['scripts'] = array(
+    '#items' => array(),
+    '#pre_render' => array('magic_pre_render_scripts_helper'),
+    '#group_callback' => 'magic_group_js_helper',
+    '#aggregate_callback' => 'magic_aggregate_js_helper',
+    '#type' => 'scripts'
+  );
+}
+
+/**
+ * A helper function to load the required scripts when we need them.
+ */
+function magic_required_scripts() {
+  static $loaded = FALSE;
+
+  if (!$loaded) {
+    module_load_include('inc', 'magic', 'includes/common');
+    module_load_include('inc', 'magic', 'includes/js_scripts');
+    $loaded = TRUE;
+  }
+}
+
+function magic_do_we_do_js_work() {
+  $do_we = &drupal_static(__FUNCTION__, NULL);
+
+  if (!is_null($do_we)) {
+    return $do_we;
+  }
+
+  $admin = variable_get('magic_js_on_admin', 0);
+  $custom_js_handling = variable_get('magic_custom_js_handling', 0);
+
+  // Check if we are on an admin page, and if so, do we want to use our JS?
+  if (path_is_admin(current_path()) && $admin == 0) {
+    $do_we = FALSE;
+  }
+  elseif ($custom_js_handling == 0) {
+    $do_we = FALSE;
+  }
+  else {
+    $do_we = TRUE;
+  }
+
+  return $do_we;
+}
+
+function magic_pre_render_scripts_helper($elements) {
+  $do_we = magic_do_we_do_js_work();
+
+  if ($do_we) {
+    magic_required_scripts();
+    return magic_pre_render_scripts($elements);
+  }
+
+  return $elements;
+}
+
+function magic_group_js_helper($javascript) {
+  $do_we = magic_do_we_do_js_work();
+
+  if ($do_we) {
+    magic_required_scripts();
+    return magic_group_js($javascript);
+  }
+
+  return $javascript;
+}
+
+function magic_aggregate_js_helper(&$js_groups) {
+  $do_we = magic_do_we_do_js_work();
+
+  if ($do_we) {
+    magic_required_scripts();
+    magic_aggregate_js($js_groups);
+  }
+}
+
+
+/**
+  * Overrides template_process_html() in order to provide support for awesome new stuffzors!
+  *
+  * Huge, amazing ups to the wizard Sebastian Siemssen (fubhy) for showing me how to do this.
+  */
+function magic_template_process_html_override(&$vars) {
+  $do_we = magic_do_we_do_js_work();
+
+  if ($do_we === FALSE) {
+    template_process_html($vars);
+    return ;
+  }
+
+  magic_required_scripts();
+
+  // Render page_top and page_bottom into top level variables.
+  $vars['page_top'] = drupal_render($vars['page']['page_top']);
+  $vars['page_bottom'] = drupal_render($vars['page']['page_bottom']);
+  // Place the rendered HTML for the page body into a top level variable.
+  $vars['page'] = $vars['page']['#children'];
+
+
+  $vars['head'] = drupal_get_html_head();
+  $vars['css'] = drupal_add_css();
+  $vars['styles']  = drupal_get_css();
+
+  $custom_js_handling = variable_get('magic_custom_js_handling', FALSE);
+
+  if ($custom_js_handling === 'experimental') {
+    $vars['page_bottom'] .= magic_get_js('footer');
+    $vars['scripts'] = magic_get_js('header');
+  }
+  else {
+    $vars['page_bottom'] .= magic_get_js_old('footer');
+    $vars['scripts'] = magic_get_js_old('header');
+  }
+}
+
+

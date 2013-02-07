@@ -1,0 +1,32 @@
+<?php
+
+/**
+ * @file
+ * Install, update, and uninstall functions for the magic module.
+ */
+
+
+/**
+ * Implements hook_install().
+ */
+function magic_install() {
+
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function magic_uninstall() {
+
+  variable_del('magic_custom_js_handling');
+  variable_del('magic_libraries_head');
+  variable_del('magic_js_on_admin');
+  variable_del('magic_custom_js_handling');
+  variable_del('magic_custom_js_handling');
+
+
+  // Not needed anymore.
+  variable_del('magic_footer_js');
+
+
+}
