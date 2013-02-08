@@ -2,8 +2,7 @@ name = Magic
 description = Perform many essential frontend tasks with JavaScript, CSS, etc.
 core = 7.x
 package = Frontend
-configure = admin/config/development/magic
 
-
-files[] = includes/common.inc
-files[] = includes/js_scripts.inc
+files[] = includes/scripts.inc
+files[] = includes/scripts-experimental.inc
+files[] = includes/css.inc
