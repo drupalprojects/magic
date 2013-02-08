@@ -1,5 +1,9 @@
 <?php
 
+require_once dirname(__FILE__) . '/includes/css.inc';
+require_once dirname(__FILE__) . '/includes/scripts.inc';
+require_once dirname(__FILE__) . '/includes/scripts-experimental.inc';
+
 /**
   * Implements hook_form_alter
   */
@@ -47,7 +51,7 @@ function magic_form_system_theme_settings_alter(&$form, &$form_state) {
   $form['magic_performance']['js']['magic_footer_js'] = array(
     '#type' => 'checkbox',
     '#title' => t('Move JavaScript to the Footer'),
-    '#description' => t("Will move all JavaScript to the bottom of your page. This can be overridden on an individual basis by setting the <pre>'force header' => true</pre> option in <pre>drupal_add_js</pre> or by using <pre>hook_js_alter</pre> to add the option to other JavaScript files."),
+    '#description' => t("Will move all JavaScript to the bottom of your page. This can be overridden on an individual basis by setting the <pre>'force header' => true</pre> option in <pre>drupal_add_js</pre> or by using <pre>hook_js_alter</pre> to add the option to other JavaScript files. Settings will always stay in the head."),
     '#default_value' => variable_get($theme . '-magic_footer_js'),
   );
 
@@ -90,8 +94,6 @@ function magic_system_theme_settings_submit($form, &$form_state) {
     'magic_embedded_mqs',
   );
 
-  dpm($form_state);
-
   foreach ($options as $option) {
     $value = $form_state['input'][$option];
     $variable = $theme . '-' . $option;
@@ -101,5 +103,63 @@ function magic_system_theme_settings_submit($form, &$form_state) {
       }
       variable_set($variable, $value);
     }
+  }
+}
+
+/**
+  * Implements hook_theme_registry_alter().
+  */
+function magic_theme_registry_alter(&$registry) {
+  if (($index = array_search('template_process_html', $registry['html']['process functions'], TRUE)) !== FALSE) {
+    array_splice($registry['html']['process functions'], $index, 1, 'magic_template_process_html_override');
+  }
+}
+
+/**
+  * Overrides template_process_html() in order to provide support for awesome new stuffzors!
+  *
+  * Huge, amazing ups to the wizard Sebastian Siemssen (fubhy) for showing me how to do this.
+  */
+function magic_template_process_html_override(&$variables) {
+  // dpm($variables);
+
+  global $theme_key;
+
+  $options = array(
+    'magic_js_excludes',
+    'magic_experimental_js',
+    'magic_library_head',
+    'magic_footer_js',
+    'magic_css_excludes',
+    'magic_embedded_mqs',
+  );
+  $theme_options = array();
+
+  foreach ($options as $option) {
+    $theme_options[$option] = variable_get($theme_key . '-' . $option);
+  }
+
+  // Render page_top and page_bottom into top level variables.
+  $variables['page_top'] = drupal_render($variables['page']['page_top']);
+  $variables['page_bottom'] = drupal_render($variables['page']['page_bottom']);
+  // Place the rendered HTML for the page body into a top level variable.
+  $variables['page'] = $variables['page']['#children'];
+
+
+  $variables['head'] = drupal_get_html_head();
+  $variables['css'] = drupal_add_css();
+  $variables['styles']  = drupal_get_css();
+
+  if ($theme_options['magic_experimental_js']) {
+    dpm('Experimental JS');
+    $variables['scripts'] = drupal_get_js();
+  }
+  elseif ($theme_options['magic_footer_js']) {
+    $variables['page_bottom'] .= magic_get_js('footer');
+    $variables['scripts'] = magic_get_js('header');
+  }
+  else {
+    dpm('Normal JS');
+    $variables['scripts'] = drupal_get_js();
   }
 }
