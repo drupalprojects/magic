@@ -152,14 +152,15 @@ function magic_template_process_html_override(&$variables) {
 
   if ($theme_options['magic_experimental_js']) {
     dpm('Experimental JS');
-    $variables['scripts'] = drupal_get_js();
+    $variables['page_bottom'] .= magic_experimental_js('footer');
+    $variables['scripts'] = magic_experimental_js('header');
   }
   elseif ($theme_options['magic_footer_js']) {
     $variables['page_bottom'] .= magic_get_js('footer');
     $variables['scripts'] = magic_get_js('header');
   }
   else {
-    dpm('Normal JS');
+    $variables['page_bottom'] .= drupal_get_js('footer');
     $variables['scripts'] = drupal_get_js();
   }
 }
