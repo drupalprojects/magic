@@ -51,7 +51,7 @@ function magic_form_system_theme_settings_alter(&$form, &$form_state) {
   $form['magic_performance']['js']['magic_footer_js'] = array(
     '#type' => 'checkbox',
     '#title' => t('Move JavaScript to the Footer'),
-    '#description' => t("Will move all JavaScript to the bottom of your page. This can be overridden on an individual basis by setting the <pre>'force header' => true</pre> option in <pre>drupal_add_js</pre> or by using <pre>hook_js_alter</pre> to add the option to other JavaScript files. Settings will always stay in the head."),
+    '#description' => t("Will move all JavaScript to the bottom of your page. This can be overridden on an individual basis by setting the <pre>'force header' => true</pre> option in <pre>drupal_add_js</pre> or by using <pre>hook_js_alter</pre> to add the option to other JavaScript files."),
     '#default_value' => variable_get($theme . '-magic_footer_js'),
   );
 
