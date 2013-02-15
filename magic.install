@@ -1,0 +1,14 @@
+<?php
+
+/**
+ * Install hooks for the magic module.
+ */
+
+
+/**
+ * Implements hook_install.
+ */
+function magic_install() {
+  // TODO: Add in support to move Aurora settings automatically.
+}
+

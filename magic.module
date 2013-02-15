@@ -1,8 +1,19 @@
 <?php
 
+/**
+ * @file Keep Frontend DRY; sprinkle it with MAGIC!
+ */
+
+// We set a specific group for jquery, so our CDN work actually works.
+define('JS_JQUERY', -10000);
+define('JS_DRUPAL', -9000);
+
+// Require all external scripts that are needed for this
 require_once dirname(__FILE__) . '/includes/css.inc';
 require_once dirname(__FILE__) . '/includes/scripts.inc';
 require_once dirname(__FILE__) . '/includes/scripts-experimental.inc';
+
+
 
 /**
   * Implements hook_form_alter
@@ -229,4 +240,11 @@ function magic_template_process_html_override(&$variables) {
     $variables['page_bottom'] .= drupal_get_js('footer');
     $variables['scripts'] = drupal_get_js();
   }
+}
+
+/**
+ * Implements hook_css_alter.
+ */
+function magic_css_alter(&$css) {
+
 }
