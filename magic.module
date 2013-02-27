@@ -19,7 +19,7 @@ require_once dirname(__FILE__) . '/includes/scripts-experimental.inc';
   * Implements hook_form_alter
   */
 function magic_form_system_theme_settings_alter(&$form, &$form_state) {
-  $theme = $form_state['build_info']['args'][0];
+  $theme = isset($form_state['build_info']['args'][0]) ? $form_state['build_info']['args'][0] : '';
 
   // Magic Performance Vertical Tabs set
   $form['magic_performance'] = array(
