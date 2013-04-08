@@ -9,6 +9,7 @@ define('JS_JQUERY', -10000);
 define('JS_DRUPAL', -9000);
 
 // Require all external scripts that are needed for this
+require_once dirname(__FILE__) . '/includes/magic.inc';
 require_once dirname(__FILE__) . '/includes/css.inc';
 require_once dirname(__FILE__) . '/includes/scripts.inc';
 require_once dirname(__FILE__) . '/includes/scripts-experimental.inc';
@@ -125,6 +126,22 @@ function magic_form_system_theme_settings_alter(&$form, &$form_state) {
     '#description' => t('Displays an indicator of !modernizr detected features. Tap/click to toggle display of all of the available features. Install the !module for full Modernizr support. The CSS and JavaScript for this will bypass your CSS and JavaScript exclude options.', array('!modernizr' => l('Modernizr', 'http://modernizr.com/', $options), '!module' => l('Modernizr Drupal module', 'http://drupal.org/project/modernizr', $options))),
     '#default_value' => theme_get_setting('magic_modernizr_debug', $theme),
   );
+
+  // We need a custom submit handler to store the CSS and JS paths as arrays.
+  array_unshift($form['#submit'], 'magic_extension_assets_theme_settings_form_submit');
+
+}
+
+function magic_extension_assets_theme_settings_form_submit($form, &$form_state) {
+  $values = $form_state['values'];
+    //dpm($form);
+
+  // Explode and trim the values for the exclusion rules.
+  foreach (array('magic_css_excludes', 'magic_js_excludes') as $item) {
+    $exclude = array_filter(array_map('trim', explode("\n", $values[$item])));
+
+    form_set_value(array('#parents' => array($item)), $exclude, $form_state);
+  }
 }
 
 /**
@@ -246,5 +263,22 @@ function magic_template_process_html_override(&$variables) {
  * Implements hook_css_alter.
  */
 function magic_css_alter(&$css) {
+
+
+  $excludes = theme_get_setting('magic_css_excludes');
+
+  if (is_array($excludes)) {
+    $excludes = magic_generate_exclude_full($excludes);
+
+    $exclude = magic_generate_path_regex($excludes['exclude']);
+    $include = magic_generate_path_regex($excludes['include']);
+    // Make sure that RTL styles are excluded as well when a file name has been
+    // specified with it's full .css file extension.
+    $exclude = preg_replace('/\\\.css$/', '(\.css|-rtl\.css)', $exclude);
+    $include = preg_replace('/\\\.css$/', '(\.css|-rtl\.css)', $include);
+
+    magic_exclude_assets($css, $exclude, $include);
+  }
+
 
 }
