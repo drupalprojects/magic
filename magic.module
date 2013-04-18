@@ -138,9 +138,30 @@ function magic_extension_assets_theme_settings_form_submit($form, &$form_state) 
 
   // Explode and trim the values for the exclusion rules.
   foreach (array('magic_css_excludes', 'magic_js_excludes') as $item) {
-    $exclude = array_filter(array_map('trim', explode("\n", $values[$item])));
+    $excludes = array_filter(array_map('trim', explode("\n", $values[$item])));
 
-    form_set_value(array('#parents' => array($item)), $exclude, $form_state);
+    form_set_value(array('#parents' => array($item)), $excludes, $form_state);
+
+    if (!empty($excludes)) {
+      // Now we get the regex and set that.
+      $excludes = magic_generate_exclude_full($excludes);
+
+      $excludes['exclude'] = magic_generate_path_regex($excludes['exclude']);
+      $excludes['include'] = magic_generate_path_regex($excludes['include']);
+
+      if ($item = 'magic_css_excludes') {
+        // Make sure that RTL styles are excluded as well when a file name has been
+        // specified with it's full .css file extension.
+        $excludes['exclude'] = preg_replace('/\\\.css$/', '(\.css|-rtl\.css)', $excludes['exclude']);
+        $excludes['include'] = preg_replace('/\\\.css$/', '(\.css|-rtl\.css)', $excludes['include']);
+      }
+
+      form_set_value(array('#parents' => array($item . '_regex')), $excludes, $form_state);
+    }
+    else {
+      // We have nothing we are excluding, ignore the setting.
+      form_set_value(array('#parents' => array($item . '_regex')), FALSE, $form_state);
+    }
   }
 }
 
@@ -264,21 +285,9 @@ function magic_template_process_html_override(&$variables) {
  */
 function magic_css_alter(&$css) {
 
-
-  $excludes = theme_get_setting('magic_css_excludes');
+  $excludes = theme_get_setting('magic_css_excludes_regex');
 
   if (is_array($excludes)) {
-    $excludes = magic_generate_exclude_full($excludes);
-
-    $exclude = magic_generate_path_regex($excludes['exclude']);
-    $include = magic_generate_path_regex($excludes['include']);
-    // Make sure that RTL styles are excluded as well when a file name has been
-    // specified with it's full .css file extension.
-    $exclude = preg_replace('/\\\.css$/', '(\.css|-rtl\.css)', $exclude);
-    $include = preg_replace('/\\\.css$/', '(\.css|-rtl\.css)', $include);
-
-    magic_exclude_assets($css, $exclude, $include);
+    magic_exclude_assets($css, $excludes['exclude'], $excludes['include']);
   }
-
-
 }
