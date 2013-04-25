@@ -266,7 +266,6 @@ function magic_template_process_html_override(&$variables) {
   $variables['styles']  = drupal_get_css();
 
   if ($theme_options['magic_experimental_js']) {
-    dpm('Experimental JS');
     $variables['page_bottom'] .= magic_experimental_js('footer');
     $variables['scripts'] = magic_experimental_js('header');
   }
@@ -281,13 +280,99 @@ function magic_template_process_html_override(&$variables) {
 }
 
 /**
+ * Checks the magic cache.
+ *
+ * @param string $cid
+ *   A string cache id. {theme_name}_{css/js}_{md4_hash}
+ *
+ * @return array
+ *   Either the array of the cached data, or FALSE.
+ */
+function _magic_check_cache($cid) {
+  $data = cache_get($cid, 'cache_magic');
+
+  return $data ? unserialize($data->data) : FALSE;
+}
+
+/**
+ * Sets the magic cache.
+ *
+ * @param string $cid
+ *   A string cache id. {theme_name}_{css/js}_{md4_hash}
+ * @param array $data
+ *   The array of data to store within the cache.
+ *
+ * @return object
+ *   A cache data object.
+ */
+function _magic_set_cache($cid, $data) {
+  $data = serialize($data);
+
+  return cache_set($cid, $data, 'cache_magic', CACHE_TEMPORARY);
+}
+
+/**
+ * A helper function to clear all the magic cache.
+ */
+function _magic_clear_cache() {
+  cache_clear_all(NULL, 'cache_magic');
+}
+
+/**
+ * Implements hook_flush_caches.
+ */
+function magic_flush_caches() {
+  return array('cache_magic');
+}
+
+/**
+ * Implements hook_drush_cache_clear.
+ */
+function magic_drush_cache_clear(&$types) {
+  $types['magic'] = '_magic_clear_cache';
+}
+
+/**
  * Implements hook_css_alter.
  */
 function magic_css_alter(&$css) {
+  magic_css_js_alter($css, 'css');
+}
 
-  $excludes = theme_get_setting('magic_css_excludes_regex');
+/**
+ * Implements hook_js_alter.
+ */
+function magic_js_alter(&$js) {
+  magic_css_js_alter($js, 'js');
+}
 
+/**
+ * Helper fucntion to remove unwanted css or js.
+ *
+ * @param array $data
+ *   The css or js array.
+ * @param string $type (default: 'css')
+ *   Either 'css' or 'js' depending on the file array.
+ */
+function magic_css_js_alter(&$data, $type = 'css') {
+  global $theme_key;
+
+  // First check to see if we are even going to exclude anything.
+  $excludes = theme_get_setting("magic_{$type}_excludes_regex");
   if (is_array($excludes)) {
-    magic_exclude_assets($css, $excludes['exclude'], $excludes['include']);
+    // We get the hash of the css array to check if it has been passed already.
+    $cid = $theme_key . "_{$type}_" . hash('md4', serialize($css));
+
+    $cache = _magic_check_cache($cid);
+
+    if ($cache) {
+      // We have this array cached, use it.
+      $data = $cache;
+    }
+    else {
+      magic_exclude_assets($data, $excludes['exclude'], $excludes['include']);
+
+      _magic_set_cache($cid, $data);
+    }
   }
 }

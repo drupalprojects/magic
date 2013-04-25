@@ -12,3 +12,10 @@ function magic_install() {
   // TODO: Add in support to move Aurora settings automatically.
 }
 
+/**
+ * Implements hook_schema.
+ */
+function magic_schema() {
+  $schema['cache_magic'] = drupal_get_schema_unprocessed('system', 'cache');
+  return $schema;
+}
