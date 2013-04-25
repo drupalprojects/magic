@@ -236,24 +236,6 @@ function magic_theme_registry_alter(&$registry) {
   * Huge, amazing ups to the wizard Sebastian Siemssen (fubhy) for showing me how to do this.
   */
 function magic_template_process_html_override(&$variables) {
-  // dpm($variables);
-
-  global $theme_key;
-
-  $options = array(
-    'magic_js_excludes',
-    'magic_experimental_js',
-    'magic_library_head',
-    'magic_footer_js',
-    'magic_css_excludes',
-    'magic_embedded_mqs',
-  );
-  $theme_options = array();
-
-  foreach ($options as $option) {
-    $theme_options[$option] = variable_get($theme_key . '-' . $option);
-  }
-
   // Render page_top and page_bottom into top level variables.
   $variables['page_top'] = drupal_render($variables['page']['page_top']);
   $variables['page_bottom'] = drupal_render($variables['page']['page_bottom']);
@@ -265,11 +247,11 @@ function magic_template_process_html_override(&$variables) {
   $variables['css'] = drupal_add_css();
   $variables['styles']  = drupal_get_css();
 
-  if ($theme_options['magic_experimental_js']) {
+  if (theme_get_setting('magic_experimental_js')) {
     $variables['page_bottom'] .= magic_experimental_js('footer');
     $variables['scripts'] = magic_experimental_js('header');
   }
-  elseif ($theme_options['magic_footer_js']) {
+  elseif (theme_get_setting('magic_footer_js')) {
     $variables['page_bottom'] .= magic_get_js('footer');
     $variables['scripts'] = magic_get_js('header');
   }
@@ -361,7 +343,7 @@ function magic_css_js_alter(&$data, $type = 'css') {
   $excludes = theme_get_setting("magic_{$type}_excludes_regex");
   if (is_array($excludes)) {
     // We get the hash of the css array to check if it has been passed already.
-    $cid = $theme_key . "_{$type}_" . hash('md4', serialize($css));
+    $cid = $theme_key . "_{$type}_" . hash('md4', serialize($data));
 
     $cache = _magic_check_cache($cid);
 
