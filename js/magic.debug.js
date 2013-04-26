@@ -1,4 +1,4 @@
-jQuery(function($) {
+(function($, window, undefined) {
 
   var viewportWidth = $('#magic-viewport-indicator');
   var modernizrDebug = $('#magic-modernizr-debug');
@@ -120,4 +120,4 @@ jQuery(function($) {
       });
     }
   }
-});
+})(jQuery, window);
