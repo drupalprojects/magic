@@ -127,7 +127,7 @@ function magic_generate_path_regex($paths) {
     $item = str_replace('\*', '(.*)', $item);
   }
 
-  return '/^(' . implode('|', $paths) . ')$/';
+  return empty($paths) ? FALSE : '/^(' . implode('|', $paths) . ')$/';
 }
 
 /**
@@ -142,13 +142,22 @@ function magic_generate_path_regex($paths) {
 function magic_exclude_assets(&$elements, $exclude, $include) {
   $mapping = magic_generate_asset_mapping($elements);
 
-  // We do a grep on each the exclude list, and include list and return the keys
-  // of the exclude list minus those that are specifically included.
-  $full_exclude = array_diff_key(preg_grep($exclude, $mapping), preg_grep($include, $mapping));
+  // We first check to see if we have an include array. If not, we don't need to
+  // check it as well.
+  if ($include) {
+    // We do a grep on each the exclude list, and include list and return the keys
+    // of the exclude list minus those that are specifically included.
 
-  // Finally, implode the array of items to exclude into a proper regex and
-  // invoke in on the array of files to be excluded.
-  $elements = array_diff_key($elements, $full_exclude);
+    $full_exclude = array_diff_key(preg_grep($exclude, $mapping), preg_grep($include, $mapping));
+
+    // Finally, implode the array of items to exclude into a proper regex and
+    // invoke in on the array of files to be excluded.
+    $elements = array_diff_key($elements, $full_exclude);
+  }
+  else {
+    // We only have an exclude array, so we only have to do a preg_grep for it.
+    $elements = array_diff_key($elements, preg_grep($exclude, $mapping));
+  }
 }
 
 /**

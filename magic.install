@@ -10,6 +10,12 @@
  */
 function magic_install() {
   // TODO: Add in support to move Aurora settings automatically.
+
+  db_update('system')
+    ->fields(array('weight' => 50))
+    ->condition('name', 'magic', '=')
+    ->execute();
+
 }
 
 /**
