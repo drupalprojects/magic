@@ -63,9 +63,8 @@
   // Done here because scope may change on alter. Screw Inversion of control.
 
   // Get Magic Library Head variable for current theme.
-  global $theme_key;
-  $library_head = variable_get($theme_key . '-magic_library_head');
-  $footer_js = variable_get($theme_key . '-magic_footer_js');
+  $library_head = theme_get_setting('magic_library_head');
+  $footer_js = theme_get_setting('magic_footer_js');
 
   if ($footer_js) {
     foreach ($javascript as $js_key => $js_value) {

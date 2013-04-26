@@ -50,9 +50,7 @@ function magic_get_js($scope = 'header', $javascript = NULL, $skip_alter = FALSE
   // If it is neither enabled nor set to true, change scope to footer, otherwise, keep it in the header.
   // Done here because scope may change on alter. Screw Inversion of control.
 
-  // Get Magic Library Head variable for current theme.
-  global $theme_key;
-  $library_head = variable_get($theme_key . '-magic_library_head');
+  $library_head = theme_get_setting('magic_library_head');
 
   foreach ($javascript as $js_key => $js_value) {
     if (!empty($js_value['force header']) && $js_value['force header']) {
