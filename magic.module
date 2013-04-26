@@ -118,14 +118,25 @@ function magic_form_system_theme_settings_alter(&$form, &$form_state) {
     '#default_value' => theme_get_setting('magic_viewport_indicator', $theme),
   );
 
-  // Modernizr Debug Option
-  $options = array('attributes' => array('target' => '_blank'));
-  $form['magic_performance']['dev']['magic_modernizr_debug'] = array(
-    '#type' => 'checkbox',
-    '#title' => t('Modernizr Indicator'),
-    '#description' => t('Displays an indicator of !modernizr detected features. Tap/click to toggle display of all of the available features. Install the !module for full Modernizr support. The CSS and JavaScript for this will bypass your CSS and JavaScript exclude options.', array('!modernizr' => l('Modernizr', 'http://modernizr.com/', $options), '!module' => l('Modernizr Drupal module', 'http://drupal.org/project/modernizr', $options))),
-    '#default_value' => theme_get_setting('magic_modernizr_debug', $theme),
-  );
+  if (module_exists('modernizr')) {
+    // Modernizr Debug Option
+    $options = array('attributes' => array('target' => '_blank'));
+    $form['magic_performance']['dev']['magic_modernizr_debug'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Modernizr Indicator'),
+      '#description' => t('Displays an indicator of !modernizr detected features. Tap/click to toggle display of all of the available features. Install the !module for full Modernizr support. The CSS and JavaScript for this will bypass your CSS and JavaScript exclude options.', array('!modernizr' => l('Modernizr', 'http://modernizr.com/', $options), '!module' => l('Modernizr Drupal module', 'http://drupal.org/project/modernizr', $options))),
+      '#default_value' => theme_get_setting('magic_modernizr_debug', $theme),
+    );
+  }
+  else {
+    // We don't have modernizr :-(
+    $form['magic_performance']['dev']['magic_modernizr_debug'] = array(
+      '#type' => 'hidden',
+      '#value' => FALSE,
+    );
+  }
+
+
 
   // We need a custom submit handler to store the CSS and JS paths as arrays.
   array_unshift($form['#submit'], 'magic_extension_assets_theme_settings_form_submit');
