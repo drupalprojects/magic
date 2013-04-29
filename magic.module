@@ -14,7 +14,132 @@ require_once dirname(__FILE__) . '/includes/css.inc';
 require_once dirname(__FILE__) . '/includes/scripts.inc';
 require_once dirname(__FILE__) . '/includes/scripts-experimental.inc';
 
+/**
+  * Implements hook_menu
+  */
+function magic_menu() {
+  $items = array();
 
+  $items['admin/appearance/settings/%/export'] = array(
+    'title' => 'Export theme settings',
+    'description' => 'Export theme settings',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('magic_export_settings', 3),
+    'access arguments' => array('administer themes')
+  );
+
+  return $items;
+}
+
+/**
+  * Exports Theme Settings
+  */
+function magic_export_settings($form, &$form_state, $theme) {
+
+  $theme_info = drupal_parse_info_file(drupal_get_path('theme', $theme) . '/' . $theme . '.info');
+  unset($theme_info['settings']);
+
+  $name = filter_xss($theme_info['name']);
+
+  drupal_set_title(t('Export theme settings for ' . $name));
+
+  $settings = isset($theme_info['settings']) ? $theme_info['settings'] : array();
+  $settings = variable_get('theme_' . $theme . '_settings', $settings);
+
+  $theme_info['settings'] = $settings;
+
+  $built_info = _magic_write_info_file($theme, $theme_info);
+  $lines = substr_count($built_info, "\n");
+
+  if ($lines > 40) {
+    $lines = 40;
+  }
+
+
+  $form = array();
+
+  $form['info'] = array(
+    '#title' => t($name . '.info Contents'),
+    '#description' => t('Either copy this into ' . $name . '.info or press the Save button to overwrite ' . $name . '.info'),
+    '#type' => 'textarea',
+    '#rows' => $lines,
+    '#default_value' => $built_info,
+  );
+
+  $form['theme'] = array(
+    '#type' => 'hidden',
+    '#value' => $theme,
+  );
+
+  $form['save'] = array(
+    '#type' => 'submit',
+    '#value' => t('Save ' . $name . '.info'),
+  );
+
+
+  return $form;
+}
+
+/**
+  * Submit hook for Export Theme Settings
+  */
+function magic_export_settings_submit($form, &$form_state) {
+  $info = $form_state['values']['info'];
+  $theme = $form['theme']['#value'];
+
+  $destination = drupal_get_path('theme', $theme);
+
+  file_unmanaged_save_data($info, $destination . '/' . $theme . '.info', FILE_EXISTS_REPLACE);
+
+  drupal_set_message(t($theme . '.info has been updated.'));
+
+  drupal_goto('admin/appearance/settings/' . $theme);
+
+  return false;
+}
+
+function _magic_write_info_file($theme, $info, $destination = NULL) {
+  $destination = isset($destination) ? $destination : drupal_get_path('theme', $theme);
+
+  if (!empty($destination)) {
+    return _magic_build_info_file($info);
+    // return file_unmanaged_save_data(magic_build_info_file($info), $destination . '/' . $name . '.info', FILE_EXISTS_REPLACE);
+  }
+
+  return FALSE;
+}
+
+function _magic_build_info_file($array, $prefix = FALSE) {
+  $info = '';
+  $info_regions = array(
+    'stylesheets',
+    'regions',
+    'settings',
+    'scripts',
+    'modernizr'
+  );
+
+  foreach ($array as $key => $value) {
+
+    foreach ($info_regions as $region) {
+      if ($key === $region) {
+	$info .= "\n; ========================================";
+	$info .= "\n" . '; ' . ucfirst($key) . "\n";
+	$info .= "; ========================================\n\n";
+      }
+    }
+
+    if (is_array($value)) {
+      $info .= _magic_build_info_file($value, (!$prefix ? $key : "{$prefix}[{$key}]"));
+    }
+    else {
+      $info .= $prefix ? ("{$prefix}[" . $key .']') : $key;
+      $info .= " = '" . str_replace("'", "\'", $value) . "'\n";
+    }
+  }
+
+  return $info;
+}
 
 /**
   * Implements hook_form_alter
@@ -138,9 +263,22 @@ function magic_form_system_theme_settings_alter(&$form, &$form_state) {
 
 
 
+  // Add export button to export current theme settings
+
+
+  $form['actions']['export'] = array(
+    '#type' => 'button',
+    '#value' => t('Export Settings'),
+    '#executes_submit_callback' => true,
+    '#submit' => array('magic_goto_export'),
+  );
+
   // We need a custom submit handler to store the CSS and JS paths as arrays.
   array_unshift($form['#submit'], 'magic_extension_assets_theme_settings_form_submit');
+}
 
+function magic_goto_export($form, $form_state) {
+    drupal_goto('admin/appearance/settings/' . arg(3) . '/export');
 }
 
 /**
