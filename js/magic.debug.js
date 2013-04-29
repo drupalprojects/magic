@@ -35,7 +35,7 @@
         viewportWidth.innerHTML = widthEM + 'em';
       }
       else {
-        viewportWidth.html(widthEM + 'em');
+        viewportWidth.html = widthEM + 'em';
         localStorage.setItem("Magic Viewport Storage", 'em');
       }
     }
@@ -50,12 +50,12 @@
     if (supports_html5_storage()) {
       var modernizrStatus = localStorage.getItem("Magic Modernizr Storage");
 
-      if (modernizrStatus == 'open') {
+      if (hasClass(modernizrDebug, 'open')) {
         removeClass(modernizrDebug, 'open');
         addClass(modernizrDebug, 'closed');
         localStorage.setItem("Magic Modernizr Storage", 'closed');
       }
-      else if (modernizrStatus == 'closed') {
+      else if (hasClass(modernizrStatus, 'closed') ) {
         removeClass(modernizrDebug, 'closed');
         addClass(modernizrDebug, 'open');
         localStorage.setItem("Magic Modernizr Storage", 'open');
