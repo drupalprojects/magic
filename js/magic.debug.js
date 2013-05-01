@@ -26,7 +26,7 @@
     var widthEM = widthPX / 16;
 
     if (supports_html5_storage()) {
-      var viewportStatus = localStorage.getItem("Magic Viewport Storage");
+      var viewportStatus = localStorage.getItem("MagicViewportStorage");
 
       if (viewportStatus == 'px') {
         viewportWidth.innerHTML = widthPX + 'px';
@@ -36,7 +36,7 @@
       }
       else {
         viewportWidth.html = widthEM + 'em';
-        localStorage.setItem("Magic Viewport Storage", 'em');
+        localStorage.setItem("MagicViewportStorage", 'em');
       }
     }
     else {
@@ -48,17 +48,15 @@
     var modernizrDebug = document.getElementById('magic-modernizr-debug');
 
     if (supports_html5_storage()) {
-      var modernizrStatus = localStorage.getItem("Magic Modernizr Storage");
+      var modernizrStatus = localStorage.getItem("MagicModernizrStorage");
 
-      if (hasClass(modernizrDebug, 'open')) {
-        removeClass(modernizrDebug, 'open');
-        addClass(modernizrDebug, 'closed');
-        localStorage.setItem("Magic Modernizr Storage", 'closed');
-      }
-      else if (hasClass(modernizrStatus, 'closed') ) {
+      if (modernizrStatus == 'open') {
         removeClass(modernizrDebug, 'closed');
         addClass(modernizrDebug, 'open');
-        localStorage.setItem("Magic Modernizr Storage", 'open');
+      }
+      else if (modernizrStatus == 'closed') {
+        removeClass(modernizrDebug, 'open');
+        addClass(modernizrDebug, 'closed');
       }
 
     }
@@ -73,13 +71,13 @@
     // Viewport Event Listener
     viewportWidth.addEventListener('click', function() {
       if (supports_html5_storage()) {
-        var viewportStatus = localStorage.getItem("Magic Viewport Storage");
+        var viewportStatus = localStorage.getItem("MagicViewportStorage");
 
         if (viewportStatus == 'px') {
-          localStorage.setItem("Magic Viewport Storage", 'em');
+          localStorage.setItem("MagicViewportStorage", 'em');
         }
         else if (viewportStatus == 'em') {
-          localStorage.setItem("Magic Viewport Storage", 'px');
+          localStorage.setItem("MagicViewportStorage", 'px');
         }
 
         viewport_width();
@@ -90,7 +88,7 @@
     if (modernizrDebug) {
       modernizrDebug.innerHTML = document.getElementsByTagName('html')[0].classList;
 
-      var modernizrStatus = localStorage.getItem("Magic Modernizr Storage");
+      var modernizrStatus = localStorage.getItem("MagicModernizrStorage");
 
       if (modernizrStatus == 'closed') {
         removeClass(modernizrDebug, 'open');
@@ -98,13 +96,13 @@
       }
 
       modernizrDebug.addEventListener('click', function() {
-        var modernizrStatus = localStorage.getItem("Magic Modernizr Storage");
+        var modernizrStatus = localStorage.getItem("MagicModernizrStorage");
 
-        if (modernizrStatus == 'open') {
-          localStorage.setItem("Magic Modernizr Storage", 'open');
+        if (modernizrStatus == 'closed') {
+          localStorage.setItem("MagicModernizrStorage", 'open');
         }
-        else if (modernizrStatus == 'closed') {
-          localStorage.setItem("Magic Modernizr Storage", 'closed');
+        else {
+          localStorage.setItem("MagicModernizrStorage", 'closed');
         }
 
         modernizr_debug();
