@@ -529,7 +529,7 @@ function magic_js_alter(&$js) {
 }
 
 /**
- * Helper fucntion to remove unwanted css or js.
+ * Helper function to remove unwanted css or js.
  *
  * @param array $data
  *   The css or js array.
