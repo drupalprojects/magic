@@ -486,26 +486,13 @@ function _magic_clear_cache($theme = FALSE, $types = array()) {
 
   if ($theme) {
     // We are only clearing the cache for a specific theme, not all caches.
-    // We do this with a straight db_delete, because we are removing several
-    // cache objects at once.
-    $query = db_delete('cache_magic')
-      ->condition('expire', CACHE_PERMANENT, '<>')
-      ->condition('expire', REQUEST_TIME, '<');
-
-    if (empty($types) || ($types['css'] == TRUE && $types['js'] == TRUE)) {
-      // We are clearing all caches for a theme.
-      $or = db_or()
-        ->condition('cid', db_like($theme . '_css_') . '%', 'LIKE')
-        ->condition('cid', db_like($theme . '_js_') . '%', 'LIKE');
-
-      $query->condition($or);
+    if (empty($types) || $types['css'] == TRUE) {
+      cache_clear_all($theme . '_css_', 'cache_magic', TRUE);
     }
-    else {
-      // We are only clearing either the CSS or JS cache for a theme.
-      $which = ($types['css'] ? '_css_' : '_js_');
-      $query->condition('cid', db_like($theme . $which) . '%', 'LIKE');
+
+    if (empty($types) || $types['js'] == TRUE) {
+      cache_clear_all($theme . '_js_', 'cache_magic', TRUE);
     }
-    $query->execute();
   }
   else {
     // No settings were passed, we will clear all caches.
