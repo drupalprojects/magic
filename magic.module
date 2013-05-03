@@ -217,6 +217,11 @@ function _magic_build_settings_php_export($array, $theme) {
 function magic_form_system_theme_settings_alter(&$form, &$form_state) {
   $theme = isset($form_state['build_info']['args'][0]) ? $form_state['build_info']['args'][0] : '';
 
+  // Are we the global form? We do NOT wanna touch that craziness.
+  if (empty($theme)) {
+    return;
+  }
+
   // Magic Performance Vertical Tabs set
   $magic_settings = array(
     '#type' => 'vertical_tabs',
@@ -358,7 +363,6 @@ function magic_form_system_theme_settings_alter(&$form, &$form_state) {
       $function($magic_settings, $theme);
     }
   }
-
 
   if (!empty($magic_settings['#submit'])) {
     array_merge($form['#submit'], $magic_settings['#submit']);
