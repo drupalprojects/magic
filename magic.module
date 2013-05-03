@@ -25,7 +25,7 @@ function magic_menu() {
     'description' => 'Export theme settings',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('magic_export_settings', 3),
-    'access arguments' => array('administer themes')
+    'access arguments' => array('administer themes'),
   );
 
   return $items;
@@ -60,7 +60,15 @@ function magic_help($path, $arg) {
   */
 function magic_export_settings($form, &$form_state, $theme) {
 
-  $theme_info = drupal_parse_info_file(drupal_get_path('theme', $theme) . '/' . $theme . '.info');
+  $path = drupal_get_path('theme', $theme);
+
+  if ($path == '') {
+    // The theme doesn't actually exist, return a 404 page.
+    drupal_not_found();
+    return;
+  }
+
+  $theme_info = drupal_parse_info_file($path . '/' . $theme . '.info');
   unset($theme_info['settings']);
 
   $name = filter_xss($theme_info['name']);
@@ -72,7 +80,7 @@ function magic_export_settings($form, &$form_state, $theme) {
 
   $theme_info['settings'] = $settings;
 
-  $built_info = _magic_write_info_file($theme, $theme_info);
+  $built_info = _magic_build_info_file($theme_info);
   $lines = substr_count($built_info, "\n");
 
   if ($lines > 40) {
@@ -84,10 +92,17 @@ function magic_export_settings($form, &$form_state, $theme) {
 
   $form['info'] = array(
     '#title' => t($name . '.info Contents'),
-    '#description' => t('Either copy this into ' . $name . '.info or press the Save button to overwrite ' . $name . '.info'),
+    '#description' => t('Make any changes you want to ' . $name . '.info then press the Save button to overwrite ' . $name . '.info. If the file is saved correctly, the variable settings within the database will be automatically removed.'),
     '#type' => 'textarea',
     '#rows' => $lines,
     '#default_value' => $built_info,
+  );
+
+  $form['settings'] = array(
+    '#title' => t('Settings.php export'),
+    '#type' => 'textarea',
+    '#default_value' => _magic_build_settings_php_export($theme_info, $theme),
+    '#description' => t('For a permanent settings save, copy and paste this into your settings.php file. If you do this, you cannot change the settings with the UI any longer.'),
   );
 
   $form['theme'] = array(
@@ -113,27 +128,44 @@ function magic_export_settings_submit($form, &$form_state) {
 
   $destination = drupal_get_path('theme', $theme);
 
-  file_unmanaged_save_data($info, $destination . '/' . $theme . '.info', FILE_EXISTS_REPLACE);
+  $file = file_unmanaged_save_data($info, $destination . '/' . $theme . '.info', FILE_EXISTS_REPLACE);
 
-  drupal_set_message(t($theme . '.info has been updated.'));
+  // Only mark that the settings have updated if the file saved.
+  if ($file) {
+    drupal_set_message(t($theme . '.info has been updated.'));
 
-  drupal_goto('admin/appearance/settings/' . $theme);
+    // Since we exported the file, we want to delete the settings variable.
+    // This will get remade whenever we want to edit the settings in the future,
+    // but can always be re-removed.
+    variable_del('theme_' . $theme . '_settings');
 
-  return false;
-}
+    drupal_goto('admin/appearance/settings/' . $theme);
+  }
+  else {
 
-function _magic_write_info_file($theme, $info, $destination = NULL) {
-  $destination = isset($destination) ? $destination : drupal_get_path('theme', $theme);
-
-  if (!empty($destination)) {
-    return _magic_build_info_file($info);
-    // return file_unmanaged_save_data(magic_build_info_file($info), $destination . '/' . $name . '.info', FILE_EXISTS_REPLACE);
+    drupal_set_message(t($theme . '.info has not been saved, an error has occured.'), 'error');
   }
 
-  return FALSE;
+
+
+  return $file;
 }
 
-function _magic_build_info_file($array, $prefix = FALSE) {
+/**
+ * Helper function to build the contents of the .info file.
+ *
+ * This function will take the current theme infomation, and create the export
+ * based upon the current info file and settings saved within the database.
+ *
+ * @param array $array
+ *   An array of all the current theme settings to be parsed.
+ * @param string $prefix
+ *   The prefix of something @fubhy made.
+ *
+ * @return string
+ *   The full info file all prettified.
+ */
+function _magic_build_info_file($array, $prefix = '') {
   $info = '';
   $info_regions = array(
     'stylesheets',
@@ -147,14 +179,14 @@ function _magic_build_info_file($array, $prefix = FALSE) {
 
     foreach ($info_regions as $region) {
       if ($key === $region) {
-	$info .= "\n; ========================================";
-	$info .= "\n" . '; ' . ucfirst($key) . "\n";
-	$info .= "; ========================================\n\n";
+      	$info .= "\n; ========================================";
+      	$info .= "\n" . '; ' . ucfirst($key) . "\n";
+      	$info .= "; ========================================\n\n";
       }
     }
 
     if (is_array($value)) {
-      $info .= _magic_build_info_file($value, (!$prefix ? $key : "{$prefix}[{$key}]"));
+      $info .= _magic_build_info_file($value, (empty($prefix) ? $key : "{$prefix}[{$key}]"));
     }
     else {
       $info .= $prefix ? ("{$prefix}[" . $key .']') : $key;
@@ -163,6 +195,20 @@ function _magic_build_info_file($array, $prefix = FALSE) {
   }
 
   return $info;
+}
+
+/**
+ * A helper function to print the theme settings withing settings.php.
+ *
+ *
+ */
+function _magic_build_settings_php_export($array, $theme) {
+  $export = '$conf[\'theme_' . $theme . '_settings\'] = ';
+  $export .= var_export($array['settings'], TRUE);
+  $export .= ';';
+
+  return $export;
+
 }
 
 /**
