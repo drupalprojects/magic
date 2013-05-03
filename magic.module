@@ -334,10 +334,31 @@ function magic_form_system_theme_settings_alter(&$form, &$form_state) {
   // We are adding an extra submit handler, so other can add their own.
   $magic_settings['#submit'] = array();
 
-  // Run the magic settings through an alter. We do this because magic itself is
+  // Run the magic settings through a hook. We do this because magic itself is
   // weighted lower than other modules for the CSS/JS work we do. This will
   // allow modules and themes to actually alter the form array we use.
-  drupal_alter('magic_theme_setting', $magic_settings, $theme);
+  $magic_settings_hook = module_invoke_all('magic', $magic_settings, $theme);
+  $magic_settings = array_merge($magic_settings, $magic_settings_hook);
+
+  // Now, the fun part. Drupal doesn't actually allow the theme we are editing
+  // to alter it. Because it does weird things. We are going to fix that.
+  $all_themes = list_themes();
+  $this_theme = $all_themes[$theme];
+  $functions = array($theme . '_magic_alter');
+
+  if (isset($this_theme->base_themes)) {
+    foreach ($this_theme->base_themes as $base_theme_key => $base_theme) {
+      $functions[] = $base_theme_key . '_magic_alter';
+    }
+  }
+
+  $functions = array_reverse($functions);
+  foreach ($functions as $function) {
+    if (function_exists($function)) {
+      $function($magic_settings, $theme);
+    }
+  }
+
 
   if (!empty($magic_settings['#submit'])) {
     array_merge($form['#submit'], $magic_settings['#submit']);
