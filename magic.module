@@ -300,7 +300,8 @@ function magic_extension_assets_theme_settings_form_submit($form, &$form_state) 
     // rebuild the regex and clear our caches.
     $current_settings = variable_get($values['var'], FALSE);
 
-    if (!$current_settings[$item] || $values[$item] !== $current_settings[$item]) {
+    if (!isset($current_settings[$item . '_regex']) || $values[$item] !== $current_settings[$item]) {
+
       // Since we are updating the script, we must clear our caches after. We
       // set it this way, so that we don't clear them twice if both the CSS and
       // JS changed.
@@ -317,7 +318,7 @@ function magic_extension_assets_theme_settings_form_submit($form, &$form_state) 
         $excludes['exclude'] = magic_generate_path_regex($excludes['exclude']);
         $excludes['include'] = magic_generate_path_regex($excludes['include']);
 
-        if ($item = 'magic_css_excludes') {
+        if ($item == 'magic_css_excludes') {
           // Make sure that RTL styles are excluded as well when a file name has been
           // specified with it's full .css file extension.
           $excludes['exclude'] = preg_replace('/\\\.css$/', '(\.css|-rtl\.css)', $excludes['exclude']);
