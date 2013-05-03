@@ -32,6 +32,30 @@ function magic_menu() {
 }
 
 /**
+ * Implements hook_help.
+ */
+function magic_help($path, $arg) {
+  $output = '';
+
+  switch ($path) {
+    case 'admin/help#magic':
+      $output = '';
+      $output .= '<p>' . t('All Drupal sites need some magic, so give yours some! Magic is a set of tools for front-end best practices and general front-end goodies to make your life as a front-end developer happier.') . '</p>';
+      $output .= '<h2>' . t('Theme Settings Export') . '</h2>';
+      $output .= '<p>' . t('To ensure the most flexibility, Drupal pulls your theme settings from a variety of places before returning the current setting to the module or theme requesting it. It will first pull from the base theme\'s .info file, then the active theme\'s .info file, then the global theme settings form, then the active theme\'s setting form. Each check will override the previous, so the active theme settings form settings will always override the theme\'s .info file. ') . '</p>';
+      $output .= '<p>' . t('To facilitate settings export, magic provides two methods of exporting your theme settings to version control. First, you can export your settings to a new .info file, although it should be noted that this will be overridden once settings are saved within the database. To keep control of variables within the database, you can either use !features and !strongarm to maintain the code, or add a $conf[] variable within your settings.php. Currently, we are working on exporting the $conf[] variable needed to put it within your settings.php.  ', array('!features' => l('Features', 'http://drupal.org/project/features'), '!strongarm' => l('Strongarm', 'http://drupal.org/project/strongarm'))) . '</p>';
+      $output .= '<h2>' . t('Advanced CSS / JS Aggregation') . '</h2>';
+      $output .= '<p>' . t('Documentation coming soon!') . '</p>';
+      $output .= '<h2>' . t('Selective CSS / JS Removal') . '</h2>';
+      $output .= '<p>' . t('Documentation coming soon!') . '</p>';
+    break;
+  }
+
+  return $output;
+
+}
+
+/**
   * Exports Theme Settings
   */
 function magic_export_settings($form, &$form_state, $theme) {
