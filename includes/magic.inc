@@ -177,8 +177,15 @@ function magic_exclude_assets(&$elements, $exclude, $include) {
 function magic_generate_asset_mapping($elements) {
   $mapping = array();
   foreach ($elements as $key => $item) {
-    if ($item['type'] == 'inline' || $item['type'] == 'setting') {
+    if ($item['type'] == 'inline') {
       // Naturally, in-line CSS is not supported.
+      continue;
+    }
+
+    // We can also remove the settings array, if we want to. This can only be
+    // removed by specifying "settings" in the exclude file.
+    if ($item['type'] == 'setting') {
+      $mapping[$key] = ':settings';
       continue;
     }
 
