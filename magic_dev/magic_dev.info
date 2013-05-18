@@ -1,0 +1,6 @@
+name = Magic Development
+description = Development options for Magic
+core = 7.x
+Package = Frontend
+
+dependencies[] = magic
