@@ -27,7 +27,7 @@
 function hook_magic($magic_settings, $theme) {
   $settings = array();
 
-  $magic_settings['js']['my_own_js_settings'] = array(
+  $settings['js']['my_own_js_settings'] = array(
     '#type' => 'checkbox',
     '#title' => t('Do you want to?'),
   );
