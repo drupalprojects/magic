@@ -1,6 +1,11 @@
 <?php
 
 /**
+ * @file
+ * Development settings for the magic module.
+ */
+
+/**
  * Implements hook_magic().
  */
 function magic_dev_magic($magic_settings, $theme) {
@@ -53,7 +58,9 @@ function magic_dev_magic($magic_settings, $theme) {
 function magic_dev_preprocess_html(&$vars) {
   global $theme_key;
 
+  //////////////////////////////
   // Theme Registry Rebuild
+  //////////////////////////////
   if (theme_get_setting('magic_rebuild_registry', $theme_key) && !defined('MAINTENANCE_MODE')) {
     // Rebuild .info data.
     system_rebuild_theme_data();
@@ -61,7 +68,9 @@ function magic_dev_preprocess_html(&$vars) {
     drupal_theme_rebuild();
   }
 
+  //////////////////////////////
   // RWD Debug Integration
+  //////////////////////////////
   if (theme_get_setting('magic_viewport_indicator', $theme_key) || theme_get_setting('magic_modernizr_debug', $theme_key)) {
     drupal_add_css(drupal_get_path('module', 'magic_dev') . '/css/magic.debug.css');
     drupal_add_js(drupal_get_path('module', 'magic_dev') . '/js/magic.debug.js');
@@ -74,8 +83,11 @@ function magic_dev_preprocess_html(&$vars) {
 function magic_dev_process_html(&$vars) {
   global $theme_key;
 
+  //////////////////////////////
   // RWD Debug Integration
+  //////////////////////////////
   if (theme_get_setting('magic_viewport_indicator', $theme_key) || theme_get_setting('magic_modernizr_debug', $theme_key)) {
+
     $debug_output = '<div id="magic-development">';
 
     if (theme_get_setting('magic_viewport_indicator', $theme_key)) {

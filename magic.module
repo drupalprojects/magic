@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @file
  * Keep Frontend DRY; sprinkle it with MAGIC!
@@ -52,12 +53,14 @@ function magic_help($path, $arg) {
   }
 
   return $output;
+
 }
 
 /**
- * Exports theme settings.
+ * Exports Theme Settings
  */
 function magic_export_settings($form, &$form_state, $theme) {
+
   $path = drupal_get_path('theme', $theme);
 
   if ($path == '') {
@@ -84,6 +87,7 @@ function magic_export_settings($form, &$form_state, $theme) {
   if ($lines > 40) {
     $lines = 40;
   }
+
 
   $form = array();
 
@@ -112,11 +116,12 @@ function magic_export_settings($form, &$form_state, $theme) {
     '#value' => t('Save ' . $name . '.info'),
   );
 
+
   return $form;
 }
 
 /**
- * Submit hook for magic_export_settings().
+ * Submit hook for Export Theme Settings
  */
 function magic_export_settings_submit($form, &$form_state) {
   $info = $form_state['values']['info'];
@@ -128,7 +133,7 @@ function magic_export_settings_submit($form, &$form_state) {
 
   // Only mark that the settings have updated if the file saved.
   if ($file) {
-    drupal_set_message(t('@theme.info has been updated.', array('@theme' => $theme)));
+    drupal_set_message(t($theme . '.info has been updated.'));
 
     // Since we exported the file, we want to delete the settings variable.
     // This will get remade whenever we want to edit the settings in the future,
@@ -138,8 +143,11 @@ function magic_export_settings_submit($form, &$form_state) {
     drupal_goto('admin/appearance/settings/' . $theme);
   }
   else {
-    drupal_set_message(t('@theme.info has not been saved, an error has occured.', array('@theme' => $theme)), 'error');
+
+    drupal_set_message(t($theme . '.info has not been saved, an error has occured.'), 'error');
   }
+
+
 
   return $file;
 }
@@ -169,6 +177,7 @@ function _magic_build_info_file($array, $prefix = '') {
   );
 
   foreach ($array as $key => $value) {
+
     foreach ($info_regions as $region) {
       if ($key === $region) {
         $info .= "\n; ========================================";
@@ -191,6 +200,8 @@ function _magic_build_info_file($array, $prefix = '') {
 
 /**
  * A helper function to print the theme settings withing settings.php.
+ *
+ *
  */
 function _magic_build_settings_php_export($array, $theme) {
   $export = '$conf[\'theme_' . $theme . '_settings\'] = ';
@@ -198,6 +209,7 @@ function _magic_build_settings_php_export($array, $theme) {
   $export .= ';';
 
   return $export;
+
 }
 
 /**
@@ -320,6 +332,7 @@ function magic_form_system_theme_settings_alter(&$form, &$form_state) {
   unset($magic_settings['#submit']);
   $form['magic_performance'] = $magic_settings;
 
+
   // Add export button to export current theme settings
   $form['actions']['export'] = array(
     '#type' => 'button',
@@ -336,7 +349,7 @@ function magic_form_system_theme_settings_alter(&$form, &$form_state) {
  * A helper function to send the form to the settings export page.
  */
 function magic_goto_export($form, $form_state) {
-  drupal_goto('admin/appearance/settings/' . arg(3) . '/export');
+    drupal_goto('admin/appearance/settings/' . arg(3) . '/export');
 }
 
 /**
@@ -352,11 +365,14 @@ function magic_extension_assets_theme_settings_form_submit($form, &$form_state) 
   $clear_caches = array('css' => FALSE, 'js' => FALSE);
 
   foreach (array('magic_css_excludes', 'magic_js_excludes') as $item) {
+
+
     // Check to see if this has changed since the last save. If so, we have to
     // rebuild the regex and clear our caches.
     $current_settings = variable_get($values['var'], FALSE);
 
     if (!isset($current_settings[$item . '_regex']) || $values[$item] !== $current_settings[$item]) {
+
       // Since we are updating the script, we must clear our caches after. We
       // set it this way, so that we don't clear them twice if both the CSS and
       // JS changed.
@@ -396,7 +412,9 @@ function magic_extension_assets_theme_settings_form_submit($form, &$form_state) 
       $excludes = $current_settings[$item . '_regex'];
     }
 
+
     form_set_value(array('#parents' => array($item . '_regex')), $excludes, $form_state);
+
   }
 
   // Now we will actually clear the caches.
@@ -425,6 +443,7 @@ function magic_template_process_html_override(&$variables) {
   $variables['page_bottom'] = drupal_render($variables['page']['page_bottom']);
   // Place the rendered HTML for the page body into a top level variable.
   $variables['page'] = $variables['page']['#children'];
+
 
   $variables['head'] = drupal_get_html_head();
   $variables['css'] = drupal_add_css();
@@ -486,6 +505,7 @@ function _magic_set_cache($cid, $data) {
  *   leave empty to clear both.
  */
 function _magic_clear_cache($theme = FALSE, $types = array()) {
+
   if ($theme) {
     // We are only clearing the cache for a specific theme, not all caches.
     if (empty($types) || $types['css'] == TRUE) {

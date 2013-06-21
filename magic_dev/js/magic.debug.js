@@ -1,3 +1,7 @@
+/**
+ * @file
+ * Debug functions for the magic_dev module.
+ */
 (function() {
 
   // Localstorage Test
