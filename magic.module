@@ -9,11 +9,6 @@
 define('JS_JQUERY', -10000);
 define('JS_DRUPAL', -9000);
 
-// Require all external scripts that are needed for this
-require_once dirname(__FILE__) . '/includes/magic.inc';
-require_once dirname(__FILE__) . '/includes/css.inc';
-require_once dirname(__FILE__) . '/includes/scripts.inc';
-require_once dirname(__FILE__) . '/includes/scripts-experimental.inc';
 
 /**
  * Implements hook_menu().
@@ -383,6 +378,7 @@ function magic_extension_assets_theme_settings_form_submit($form, &$form_state) 
       $excludes = array_filter(array_map('trim', explode("\n", $values[$item])));
 
       if (!empty($excludes)) {
+        module_load_include('inc', 'magic', 'includes/magic');
         // Now we get the regex and set that.
         $excludes = magic_generate_exclude_full($excludes);
 
@@ -450,10 +446,12 @@ function magic_template_process_html_override(&$variables) {
   $variables['styles']  = drupal_get_css();
 
   if (theme_get_setting('magic_experimental_js')) {
+    module_load_include('inc', 'magic', 'includes/scripts-experimental');
     $variables['page_bottom'] .= magic_experimental_js('footer');
     $variables['scripts'] = magic_experimental_js('header');
   }
   elseif (theme_get_setting('magic_footer_js')) {
+    module_load_include('inc', 'magic', 'includes/scripts');
     $variables['page_bottom'] .= magic_get_js('footer');
     $variables['scripts'] = magic_get_js('header');
   }
@@ -575,6 +573,7 @@ function magic_css_js_alter(&$data, $type = 'css') {
       $data = $cache;
     }
     else {
+      module_load_include('inc', 'magic', 'includes/magic');
       magic_exclude_assets($data, $excludes['exclude'], $excludes['include']);
 
       _magic_set_cache($cid, $data);
