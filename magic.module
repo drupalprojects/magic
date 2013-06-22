@@ -292,8 +292,9 @@ function magic_form_system_theme_settings_alter(&$form, &$form_state) {
     '#default_value' => theme_get_setting('magic_js_excludes', $theme),
   );
 
-  // We are adding an extra submit handler, so other can add their own.
+  // We are add an extra submit / validate handler, other can add their own.
   $magic_settings['#submit'] = array();
+  $magic_settings['#vaidate'] = array();
 
   // Run the magic settings through a hook. We do this because magic itself is
   // weighted lower than other modules for the CSS/JS work we do. This will
@@ -320,13 +321,19 @@ function magic_form_system_theme_settings_alter(&$form, &$form_state) {
     }
   }
 
+  // We now need to merge any custom #submit or #validate hooks and add them to
+  // the form. We then unset
   if (!empty($magic_settings['#submit'])) {
-    array_merge($form['#submit'], $magic_settings['#submit']);
+    $form['#submit'] = array_merge($form['#submit'], $magic_settings['#submit']);
   }
-
   unset($magic_settings['#submit']);
-  $form['magic_performance'] = $magic_settings;
 
+  if (!empty($magic_settings['#validate'])) {
+    $form['#validate'] = array_merge($form['#validate'], $magic_settings['#validate']);
+  }
+  unset($magic_settings['#submit']);
+
+  $form['magic_performance'] = $magic_settings;
 
   // Add export button to export current theme settings
   $form['actions']['export'] = array(
