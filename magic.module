@@ -9,7 +9,6 @@
 define('JS_JQUERY', -10000);
 define('JS_DRUPAL', -9000);
 
-
 /**
  * Implements hook_menu().
  */
@@ -48,11 +47,10 @@ function magic_help($path, $arg) {
   }
 
   return $output;
-
 }
 
 /**
- * Exports Theme Settings
+ * Exports theme settings.
  */
 function magic_export_settings($form, &$form_state, $theme) {
 
@@ -83,7 +81,6 @@ function magic_export_settings($form, &$form_state, $theme) {
     $lines = 40;
   }
 
-
   $form = array();
 
   $form['info'] = array(
@@ -111,12 +108,11 @@ function magic_export_settings($form, &$form_state, $theme) {
     '#value' => t('Save ' . $name . '.info'),
   );
 
-
   return $form;
 }
 
 /**
- * Submit hook for Export Theme Settings
+ * Submit hook for magic_export_settings().
  */
 function magic_export_settings_submit($form, &$form_state) {
   $info = $form_state['values']['info'];
@@ -128,7 +124,7 @@ function magic_export_settings_submit($form, &$form_state) {
 
   // Only mark that the settings have updated if the file saved.
   if ($file) {
-    drupal_set_message(t($theme . '.info has been updated.'));
+    drupal_set_message(t('@theme has been updated.', array('@theme' => $theme . '.info')));
 
     // Since we exported the file, we want to delete the settings variable.
     // This will get remade whenever we want to edit the settings in the future,
@@ -138,11 +134,8 @@ function magic_export_settings_submit($form, &$form_state) {
     drupal_goto('admin/appearance/settings/' . $theme);
   }
   else {
-
-    drupal_set_message(t($theme . '.info has not been saved, an error has occured.'), 'error');
+    drupal_set_message(t('@theme has not been saved, an error has occured.', array('@theme' => $theme . '.info')), 'error');
   }
-
-
 
   return $file;
 }
@@ -196,7 +189,12 @@ function _magic_build_info_file($array, $prefix = '') {
 /**
  * A helper function to print the theme settings withing settings.php.
  *
+ * @param array $array
+ *   An array of the current settings saved.
+ * @param string $theme
+ *   The theme key we are building the export for.
  *
+ * @return string
  */
 function _magic_build_settings_php_export($array, $theme) {
   $export = '$conf[\'theme_' . $theme . '_settings\'] = ';
@@ -204,7 +202,6 @@ function _magic_build_settings_php_export($array, $theme) {
   $export .= ';';
 
   return $export;
-
 }
 
 /**
@@ -351,7 +348,7 @@ function magic_form_system_theme_settings_alter(&$form, &$form_state) {
  * A helper function to send the form to the settings export page.
  */
 function magic_goto_export($form, $form_state) {
-    drupal_goto('admin/appearance/settings/' . arg(3) . '/export');
+  drupal_goto('admin/appearance/settings/' . arg(3) . '/export');
 }
 
 /**
@@ -367,7 +364,6 @@ function magic_extension_assets_theme_settings_form_submit($form, &$form_state) 
   $clear_caches = array('css' => FALSE, 'js' => FALSE);
 
   foreach (array('magic_css_excludes', 'magic_js_excludes') as $item) {
-
 
     // Check to see if this has changed since the last save. If so, we have to
     // rebuild the regex and clear our caches.
@@ -415,7 +411,6 @@ function magic_extension_assets_theme_settings_form_submit($form, &$form_state) 
       $excludes = $current_settings[$item . '_regex'];
     }
 
-
     form_set_value(array('#parents' => array($item . '_regex')), $excludes, $form_state);
 
   }
@@ -446,7 +441,6 @@ function magic_template_process_html_override(&$variables) {
   $variables['page_bottom'] = drupal_render($variables['page']['page_bottom']);
   // Place the rendered HTML for the page body into a top level variable.
   $variables['page'] = $variables['page']['#children'];
-
 
   $variables['head'] = drupal_get_html_head();
   $variables['css'] = drupal_add_css();
