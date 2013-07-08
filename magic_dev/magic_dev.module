@@ -9,14 +9,16 @@
  * Implements hook_magic().
  */
 function magic_dev_magic($magic_settings, $theme) {
+  $settings = array();
+
   // Development Magic Grouping
-  $magic_settings['dev'] = array(
+  $settings['dev'] = array(
     '#type' => 'fieldset',
     '#title' => t('Development Enhancements'),
   );
 
   // Footer JavaScript Option
-  $magic_settings['dev']['magic_rebuild_registry'] = array(
+  $settings['dev']['magic_rebuild_registry'] = array(
     '#type' => 'checkbox',
     '#title' => t('Rebuild Theme Registry on Reload'),
     '#description' => t('<a href="!link" target="_blank">Rebuild the theme registry</a> during project development.', array('!link' => 'http://drupal.org/node/173880#theme-registry')),
@@ -24,7 +26,7 @@ function magic_dev_magic($magic_settings, $theme) {
   );
 
   // Viewport Indicator Option
-  $magic_settings['dev']['magic_viewport_indicator'] = array(
+  $settings['dev']['magic_viewport_indicator'] = array(
     '#type' => 'checkbox',
     '#title' => t('Viewport Width Indicator'),
     '#description' => t('Displays an indicator of the viewport. Tap/click to toggle between <em>em</em> and <em>px</em>. The CSS and JavaScript for this will bypass your CSS and JavaScript exclude options.'),
@@ -34,7 +36,7 @@ function magic_dev_magic($magic_settings, $theme) {
   if (module_exists('modernizr')) {
     // Modernizr Debug Option
     $options = array('attributes' => array('target' => '_blank'));
-    $magic_settings['dev']['magic_modernizr_debug'] = array(
+    $settings['dev']['magic_modernizr_debug'] = array(
       '#type' => 'checkbox',
       '#title' => t('Modernizr Indicator'),
       '#description' => t('Displays an indicator of !modernizr detected features. Tap/click to toggle display of all of the available features. Install the !module for full Modernizr support. The CSS and JavaScript for this will bypass your CSS and JavaScript exclude options.', array('!modernizr' => l('Modernizr', 'http://modernizr.com/', $options), '!module' => l('Modernizr Drupal module', 'http://drupal.org/project/modernizr', $options))),
@@ -43,13 +45,13 @@ function magic_dev_magic($magic_settings, $theme) {
   }
   else {
     // We don't have modernizr :-(
-    $magic_settings['dev']['magic_modernizr_debug'] = array(
+    $settings['dev']['magic_modernizr_debug'] = array(
       '#type' => 'hidden',
       '#value' => FALSE,
     );
   }
 
-  return $magic_settings;
+  return $settings;
 }
 
 /**
