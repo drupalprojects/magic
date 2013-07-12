@@ -297,7 +297,7 @@ function magic_form_system_theme_settings_alter(&$form, &$form_state) {
   // weighted lower than other modules for the CSS/JS work we do. This will
   // allow modules and themes to actually alter the form array we use.
   $magic_settings_hook = module_invoke_all('magic', $magic_settings, $theme);
-  $magic_settings = array_merge($magic_settings, $magic_settings_hook);
+  $magic_settings = array_merge_recursive($magic_settings, $magic_settings_hook);
 
   // Now, the fun part. Drupal doesn't actually allow the theme we are editing
   // to alter it. Because it does weird things. We are going to fix that.
