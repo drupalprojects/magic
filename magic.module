@@ -131,6 +131,9 @@ function magic_export_settings_submit($form, &$form_state) {
     // but can always be re-removed.
     variable_del('theme_' . $theme . '_settings');
 
+    // Rebuild the system .info file information.
+    system_rebuild_theme_data();
+
     drupal_goto('admin/appearance/settings/' . $theme);
   }
   else {
