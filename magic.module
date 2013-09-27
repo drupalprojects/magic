@@ -445,6 +445,8 @@ function magic_template_process_html_override(&$variables) {
   // Place the rendered HTML for the page body into a top level variable.
   $variables['page'] = $variables['page']['#children'];
 
+  module_load_include('inc', 'magic', 'includes/styles');
+
   $variables['head'] = drupal_get_html_head();
   $variables['css'] = drupal_add_css();
   $variables['styles']  = drupal_get_css();
@@ -462,6 +464,19 @@ function magic_template_process_html_override(&$variables) {
   else {
     $variables['page_bottom'] .= drupal_get_js('footer');
     $variables['scripts'] = drupal_get_js();
+  }
+}
+
+/**
+ * Implements hook_element_info_alter().
+ *
+ * This changes Drupal's default css aggregation to use magic's version.
+ */
+function magic_element_info_alter(&$types) {
+
+  if (isset($types['styles'])) {
+    $types['styles']['#group_callback'] = 'magic_group_css';
+    $types['styles']['#aggregate_callback'] = 'magic_aggregate_css';
   }
 }
 
