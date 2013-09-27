@@ -5,7 +5,7 @@
  */
 
 /**
- * Default callback to group CSS items.
+ * Magic override callback to group CSS items.
  *
  * This function arranges the CSS items that are in the #items property of the
  * styles element into groups. Arranging the CSS items into groups serves two
@@ -112,7 +112,7 @@ function magic_group_css($css) {
 }
 
 /**
- * Default callback to aggregate CSS files and inline content.
+ * Magic override callback to aggregate CSS files and inline content.
  *
  * Having the browser load fewer CSS files results in much faster page loads
  * than when it loads many small files. This function aggregates files within
