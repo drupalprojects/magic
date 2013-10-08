@@ -5,4 +5,4 @@ package = Frontend
 
 files[] = includes/scripts.inc
 files[] = includes/scripts-experimental.inc
-files[] = includes/css.inc
+files[] = includes/styles.inc

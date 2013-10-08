@@ -27,6 +27,13 @@ function magic_menu() {
 }
 
 /**
+ * Implements hook_init().
+ */
+function magic_init() {
+  module_load_include('inc', 'magic', 'includes/styles');
+}
+
+/**
  * Implements hook_help().
  */
 function magic_help($path, $arg) {
@@ -444,8 +451,6 @@ function magic_template_process_html_override(&$variables) {
   $variables['page_bottom'] = drupal_render($variables['page']['page_bottom']);
   // Place the rendered HTML for the page body into a top level variable.
   $variables['page'] = $variables['page']['#children'];
-
-  module_load_include('inc', 'magic', 'includes/styles');
 
   $variables['head'] = drupal_get_html_head();
   $variables['css'] = drupal_add_css();
