@@ -9,6 +9,8 @@
 define('JS_JQUERY', -10000);
 define('JS_DRUPAL', -9000);
 
+require_once "includes/styles.inc";
+
 /**
  * Implements hook_menu().
  */
@@ -24,13 +26,6 @@ function magic_menu() {
   );
 
   return $items;
-}
-
-/**
- * Implements hook_init().
- */
-function magic_init() {
-  module_load_include('inc', 'magic', 'includes/styles');
 }
 
 /**
