@@ -9,8 +9,6 @@
 define('JS_JQUERY', -10000);
 define('JS_DRUPAL', -9000);
 
-require_once "includes/styles.inc";
-
 /**
  * Implements hook_menu().
  */
@@ -139,7 +137,7 @@ function magic_export_settings_submit($form, &$form_state) {
     drupal_goto('admin/appearance/settings/' . $theme);
   }
   else {
-    drupal_set_message(t('@theme has not been saved, an error has occured.', array('@theme' => $theme . '.info')), 'error');
+    drupal_set_message(t('@theme has not been saved, an error has occurred.', array('@theme' => $theme . '.info')), 'error');
   }
 
   return $file;
@@ -365,65 +363,8 @@ function magic_goto_export($form, $form_state) {
  * items.
  */
 function magic_extension_assets_theme_settings_form_submit($form, &$form_state) {
-  $values = $form_state['values'];
-  $clear_caches = array('css' => FALSE, 'js' => FALSE);
-
-  foreach (array('magic_css_excludes', 'magic_js_excludes') as $item) {
-
-    // Check to see if this has changed since the last save. If so, we have to
-    // rebuild the regex and clear our caches.
-    $current_settings = variable_get($values['var'], FALSE);
-
-    if (!isset($current_settings[$item . '_regex']) || $values[$item] !== $current_settings[$item]) {
-
-      // Since we are updating the script, we must clear our caches after. We
-      // set it this way, so that we don't clear them twice if both the CSS and
-      // JS changed.
-      $type = ($item == 'magic_css_excludes' ? 'css' : 'js');
-      $clear_caches[$type] = TRUE;
-
-      // Explode and trim the values for the exclusion rules.
-      $excludes = array_filter(array_map('trim', explode("\n", $values[$item])));
-
-      if (!empty($excludes)) {
-        module_load_include('inc', 'magic', 'includes/magic');
-        // Now we get the regex and set that.
-        $excludes = magic_generate_exclude_full($excludes);
-
-        $excludes['exclude'] = magic_generate_path_regex($excludes['exclude']);
-        $excludes['include'] = magic_generate_path_regex($excludes['include']);
-
-        if ($item == 'magic_css_excludes') {
-          // Make sure that RTL styles are excluded as well when a file name has been
-          // specified with it's full .css file extension.
-          $excludes['exclude'] = preg_replace('/\\\.css$/', '(\.css|-rtl\.css)', $excludes['exclude']);
-          $excludes['include'] = preg_replace('/\\\.css$/', '(\.css|-rtl\.css)', $excludes['include']);
-        }
-
-        // Last check, if we didnt actually have anything in excludes, we don't
-        // save a thing.
-        if ($excludes['exclude'] == FALSE) {
-          $excludes = FALSE;
-        }
-      }
-      else {
-        // We have nothing we are excluding, ignore the setting.
-        $excludes = FALSE;
-      }
-    }
-    else {
-      // If we dont re-set the form value, it will get removed.
-      $excludes = $current_settings[$item . '_regex'];
-    }
-
-    form_set_value(array('#parents' => array($item . '_regex')), $excludes, $form_state);
-
-  }
-
-  // Now we will actually clear the caches.
-  if (!empty($clear_caches)) {
-    _magic_clear_cache(substr($values['var'], '6', '-9'), $clear_caches);
-  }
+  // Clear the cache entries maintained by this module.
+  magic_clear_cache();
 }
 
 /**
@@ -436,9 +377,7 @@ function magic_theme_registry_alter(&$registry) {
 }
 
 /**
- * Overrides template_process_html() in order to provide support for awesome new stuffzors!
- *
- * Huge, amazing ups to the wizard Sebastian Siemssen (fubhy) for showing me how to do this.
+ * Overrides template_process_html().
  */
 function magic_template_process_html_override(&$variables) {
   // Render page_top and page_bottom into top level variables.
@@ -468,75 +407,11 @@ function magic_template_process_html_override(&$variables) {
 }
 
 /**
- * Implements hook_element_info_alter().
- *
- * This changes Drupal's default css aggregation to use magic's version.
+ * Clears all cache entries maintained by this module.
  */
-function magic_element_info_alter(&$types) {
-
-  if (isset($types['styles'])) {
-    $types['styles']['#group_callback'] = 'magic_group_css';
-    $types['styles']['#aggregate_callback'] = 'magic_aggregate_css';
-  }
-}
-
-/**
- * Checks the magic cache.
- *
- * @param string $cid
- *   A string cache id. {theme_name}_{css/js}_{md4_hash}
- *
- * @return array
- *   Either the array of the cached data, or FALSE.
- */
-function _magic_check_cache($cid) {
-  $data = cache_get($cid, 'cache_magic');
-
-  return $data ? unserialize($data->data) : FALSE;
-}
-
-/**
- * Sets the magic cache.
- *
- * @param string $cid
- *   A string cache id. {theme_name}_{css/js}_{md4_hash}
- * @param array $data
- *   The array of data to store within the cache.
- *
- * @return object
- *   A cache data object.
- */
-function _magic_set_cache($cid, $data) {
-  $data = serialize($data);
-
-  return cache_set($cid, $data, 'cache_magic', CACHE_TEMPORARY);
-}
-
-/**
- * A helper function to clear the magic cache.
- *
- * @param mixed $theme (default: FALSE)
- *   The theme name, or FALSE to delete all caches.
- * @param array $types (default: array())
- *   The type of caches to remove. May have an array keyed with 'css' or 'js' or
- *   leave empty to clear both.
- */
-function _magic_clear_cache($theme = FALSE, $types = array()) {
-
-  if ($theme) {
-    // We are only clearing the cache for a specific theme, not all caches.
-    if (empty($types) || $types['css'] == TRUE) {
-      cache_clear_all($theme . '_css_', 'cache_magic', TRUE);
-    }
-
-    if (empty($types) || $types['js'] == TRUE) {
-      cache_clear_all($theme . '_js_', 'cache_magic', TRUE);
-    }
-  }
-  else {
-    // No settings were passed, we will clear all caches.
-    cache_clear_all(NULL, 'cache_magic');
-  }
+function magic_clear_cache() {
+  cache_clear_all(NULL, 'cache_magic');
+  cache_clear_all('magic:', 'cache', TRUE);
 }
 
 /**
@@ -544,13 +419,6 @@ function _magic_clear_cache($theme = FALSE, $types = array()) {
  */
 function magic_flush_caches() {
   return array('cache_magic');
-}
-
-/**
- * Implements hook_drush_cache_clear().
- */
-function magic_drush_cache_clear(&$types) {
-  $types['magic'] = '_magic_clear_cache';
 }
 
 /**
@@ -572,30 +440,39 @@ function magic_js_alter(&$js) {
  *
  * @param array $data
  *   The css or js array.
- * @param string $type (default: 'css')
- *   Either 'css' or 'js' depending on the file array.
+ * @param string $type
+ *   (Optional) Either 'css' or 'js' depending on the file array. Defaults to
+ *   'css'.
  */
 function magic_css_js_alter(&$data, $type = 'css') {
-  global $theme_key;
-
   // First check to see if we are even going to exclude anything.
-  $excludes = theme_get_setting("magic_{$type}_excludes_regex");
-
-  if (is_array($excludes)) {
-    // We get the hash of the css array to check if it has been passed already.
-    $cid = $theme_key . "_{$type}_" . hash('md4', serialize($data));
-
-    $cache = _magic_check_cache($cid);
-
-    if ($cache) {
-      // We have this array cached, use it.
-      $data = $cache;
-    }
-    else {
-      module_load_include('inc', 'magic', 'includes/magic');
-      magic_exclude_assets($data, $excludes['exclude'], $excludes['include']);
-
-      _magic_set_cache($cid, $data);
-    }
+  $setting = "magic_{$type}_excludes";
+  if (!$excludes = theme_get_setting($setting)) {
+    return;
   }
+
+  // We get the hash of the css array to check if it has been passed already.
+  $hash = hash('sha256', serialize($data));
+  $cid = "{$GLOBALS['theme_key']}:{$type}:{$hash}";
+  if ($cache = cache_get($cid, 'cache_magic')) {
+    // We have this array cached, use it.
+    $data = $cache->data;
+    return;
+  }
+
+  if (!$cache = cache_get("{$setting}:{$GLOBALS['theme_key']}")) {
+    module_load_include('inc', 'magic', 'includes/magic');
+
+    // Explode and trim the values for the exclusion rules.
+    $items = array_filter(array_map('trim', explode("\n", $excludes)));
+    $steps = magic_regex_steps($items);
+
+    cache_set("{$setting}:{$GLOBALS['theme_key']}", $steps);
+  }
+  else {
+    $steps = $cache->data;
+  }
+
+  magic_exclude_assets($data, $steps);
+  cache_set($cid, $data, 'cache_magic');
 }

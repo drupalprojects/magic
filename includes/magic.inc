@@ -1,79 +1,9 @@
 <?php
+
 /**
  * @file
  * A file to contain functions for the magic module to abuse.
  */
-
-/**
- * Helper function to change magic keywords into the exclude array.
- *
- * This helper function will remove kewords such as :contrib or :base-theme and
- * change them into the paths that they represent.
- *
- * @param $exclude
- *   An array of paths to remove.
- *
- * @return array
- *   An array with 'exclude' and 'include' as the keys. Exclude contains a set
- *   of files to remove, while 'include' has the files to keep.
- */
-function magic_generate_exclude_full($array) {
-  global $base_theme_info, $theme_info;
-
-  $return = array(
-    'exclude' => array(),
-    'include' => array(),
-  );
-
-  foreach ($array as $item) {
-    $invert = substr($item, 0, 1) == '~' ? TRUE : FALSE;
-
-    if ($invert) {
-      $item = substr($item, 1);
-    }
-
-    $items = array();
-
-    // We now check the string against a set of standard variables.
-    if ($item == ':all') {
-      $items[] = '*';
-    }
-    elseif ($item == ':core') {
-      // This is unique as there are several areas where core files might be.
-      $items = array(
-        'misc/*',
-        'modules/*',
-        'themes/*',
-      );
-    }
-    elseif ($item == ':contrib') {
-      $items[] = 'sites/all/modules/*';
-    }
-    elseif ($item == ':base-theme') {
-      if (empty($base_theme_info)) {
-        // We do not actually have a base theme.
-        continue ;
-      }
-
-      $items[] = drupal_get_path('theme', $base_theme_info[0]->name) . '/*';
-    }
-    elseif ($item == ':current-theme') {
-      $items[] = drupal_get_path('theme', $theme_info->name) . '/*';
-    }
-    else {
-      $items[] = $item;
-    }
-
-    if ($invert) {
-      $return['include'] = array_merge($return['include'], $items);
-    }
-    else {
-      $return['exclude'] = array_merge($return['exclude'], $items);
-    }
-  }
-
-  return $return;
-}
 
 /**
  * Helper function for generating a regex from a list of paths.
@@ -91,66 +21,132 @@ function magic_generate_exclude_full($array) {
  * @see hook_js_alter()
  * @see hook_css_alter()
  */
-function magic_generate_path_regex($paths) {
+function magic_prepare_regex($paths) {
+  $profile = drupal_get_profile();
+  $site = preg_quote(conf_path(), '/');
+
+  $themes = array();
+  foreach ($GLOBALS['base_theme_info'] as $info) {
+    $themes[] = preg_quote($info->name, '/');
+  }
+
+  $tokens = array(
+    ':core' => '(?:misc|modules|themes)',
+    ':contrib' => "(?:sites\\/all\\/modules|$site\\/modules|profiles\\/$profile\\/modules)",
+    ':current-theme' => preg_quote(drupal_get_path('theme', $GLOBALS['theme_key']), '/'),
+    ':base-theme' => $themes ? '(?:' . implode('|', $themes) . ')' : FALSE,
+  );
+
   foreach ($paths as &$item) {
     // The first segment (everything before the first slash) is the namespace.
     // This rule only applies to local files... So if the namespace can not be
-    // mapped to a module, profile or theme engine we assume that the we are
+    // mapped to a token, module, profile or theme engine we assume that we are
     // trying to target an external file.
-    list($namespace) = explode('/', $item);
+    list($namespace) = explode('/', $item, 2);
 
-    // Check if the namespace refers to a file residing in the 'misc' folder.
-    if ($namespace != '*') {
-      // Otherwise, check if it refers to a theme, module, profile or theme
-      // engine.
+    // Process token namespaces.
+    if (isset($tokens[$namespace]) && empty($tokens[$namespace])) {
+      unset($item);
+      continue;
+    }
+    // Skip wildcard namespaces.
+    elseif ($namespace != '*' && !isset($tokens[$namespace])) {
+      // Check if it refers to a theme, module, profile or theme engine.
       foreach (array('theme', 'module', 'profile', 'theme_engine') as $type) {
         // We can't use drupal_get_path() directly because that uses dirname()
         // internally which returns '.' if no filename was found.
         if ($filename = drupal_get_filename($type, $namespace)) {
-          $prefix = dirname($filename);
-          $item = substr_replace($item, $prefix, 0, strlen($namespace));
+          $directory = preg_quote(dirname($filename), '/');
+          // Now that we know about this namespace we can add it to the tokens
+          // array for performance reasons.
+          $tokens[$namespace] = $directory;
           break;
         }
       }
     }
 
-    // Escape any regex characters and turn asterisk wildcards into actual regex
-    // wildcards.
+    // Escape any regex characters and replace tokens and wildcards.
+    $item = isset($tokens[$namespace]) ? substr($item, strlen($namespace)) : $item;
     $item = preg_quote($item, '/');
-    $item = str_replace('\*', '(.*)', $item);
+    $item = str_replace('\*', '.*', $item);
+    $item = isset($tokens[$namespace]) ? $tokens[$namespace] . $item : $item;
   }
 
-  return empty($paths) ? FALSE : '/^(' . implode('|', $paths) . ')$/';
+  return empty($paths) ? FALSE : '/^(?:' . implode('|', $paths) . ')$/';
 }
 
 /**
- * Helper function for eliminating elements from an array using a simplified
- * regex pattern.
+ * Groups include/exclude patterns together.
+ *
+ * This is required to allow for complex chained includes/excludes. We can't do
+ * this in a single, complicated regular expression as regex does not really
+ * support this (negative lookbehinds are not sufficient).
+ *
+ * @param $items
+ *   An array of include/exclude patterns.
+ *
+ * @return array
+ *   The include/exclude patterns as groups.
+ */
+function magic_regex_steps($items) {
+  $switch = FALSE;
+  $key = 0;
+  $groups = array();
+
+  // Iterate over all exclude/include paths and form groups. We start a new
+  // group every time we switch from inclusion to exclusion or vica-versa.
+  foreach ($items as $item) {
+    // If an item starts with a "~" it is an inclusion pattern.
+    if ($exclude = (strpos($item, '~') === 0)) {
+      $item = substr($item, 1);
+    }
+
+    // Start a new group if we are switching between exclusion/inclusion.
+    if ($switch !== $exclude && ($switch = !$switch) === FALSE) {
+      $key++;
+    }
+
+    // Initialize the group with two empty arrays if it does not exist yet.
+    if (!isset($groups[$key])) {
+      $groups[$key] = array_fill(0, 2, array());
+    }
+
+    $groups[$key][(!$switch ? 0 : 1)][] = $item;
+  }
+
+  // Each group now needs to have its items converted to a regex string.
+  foreach ($groups as &$group) {
+    foreach (array(0, 1) as $key) {
+      $group[$key] = !empty($group[$key]) ? magic_prepare_regex($group[$key]) : '';
+    }
+  }
+
+  return $groups;
+}
+
+/**
+ * Eliminates elements from an array using a simplified regex pattern.
  *
  * @param $elements
  *   The array of elements that should have some of its items removed.
- * @param $regex
- *   A regex as generated by omega_generate_path_regex().
+ * @param $steps
+ *   A set of regex as generated by magic_prepare_regex().
  */
-function magic_exclude_assets(&$elements, $exclude, $include) {
+function magic_exclude_assets(&$elements, $steps) {
   $mapping = magic_generate_asset_mapping($elements);
 
-  // We first check to see if we have an include array. If not, we don't need to
-  // check it as well.
-  if ($include) {
-    // We do a grep on each the exclude list, and include list and return the keys
-    // of the exclude list minus those that are specifically included.
+  $remove = array();
+  foreach ($steps as $step) {
+    list($exclude, $include) = $step;
 
-    $full_exclude = array_diff_key(preg_grep($exclude, $mapping), preg_grep($include, $mapping));
+    $remove += preg_grep($exclude, (!empty($remove) ? array_diff_key($mapping, $remove) : $mapping));
 
-    // Finally, implode the array of items to exclude into a proper regex and
-    // invoke in on the array of files to be excluded.
-    $elements = array_diff_key($elements, $full_exclude);
+    if (!empty($include)) {
+      $remove = array_diff_key($remove, preg_grep($include, $remove));
+    }
   }
-  else {
-    // We only have an exclude array, so we only have to do a preg_grep for it.
-    $elements = array_diff_key($elements, preg_grep($exclude, $mapping));
-  }
+
+  $elements = array_diff_key($elements, $remove);
 }
 
 /**
@@ -178,13 +174,6 @@ function magic_generate_asset_mapping($elements) {
   foreach ($elements as $key => $item) {
     if ($item['type'] == 'inline') {
       // Naturally, in-line CSS is not supported.
-      continue;
-    }
-
-    // We can also remove the settings array, if we want to. This can only be
-    // removed by specifying "settings" in the exclude file.
-    if ($item['type'] == 'setting') {
-      $mapping[$key] = ':settings';
       continue;
     }
 
