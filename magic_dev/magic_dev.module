@@ -9,8 +9,6 @@
  * Implements hook_magic().
  */
 function magic_dev_magic($magic_settings, $theme) {
-  $settings = array();
-
   // Development Magic Grouping
   $settings['dev'] = array(
     '#type' => 'fieldset',
@@ -22,7 +20,7 @@ function magic_dev_magic($magic_settings, $theme) {
     '#type' => 'checkbox',
     '#title' => t('Rebuild Theme Registry on Reload'),
     '#description' => t('<a href="!link" target="_blank">Rebuild the theme registry</a> during project development.', array('!link' => 'http://drupal.org/node/173880#theme-registry')),
-    '#default_value' => theme_get_setting('magic_rebuild_registry', $theme),
+    '#default_value' => theme_get_setting('magic_rebuild_registry'),
   );
 
   // Viewport Indicator Option
@@ -30,7 +28,7 @@ function magic_dev_magic($magic_settings, $theme) {
     '#type' => 'checkbox',
     '#title' => t('Viewport Width Indicator'),
     '#description' => t('Displays an indicator of the viewport. Tap/click to toggle between <em>em</em> and <em>px</em>. The CSS and JavaScript for this will bypass your CSS and JavaScript exclude options.'),
-    '#default_value' => theme_get_setting('magic_viewport_indicator', $theme),
+    '#default_value' => theme_get_setting('magic_viewport_indicator'),
   );
 
   if (module_exists('modernizr')) {
@@ -40,14 +38,7 @@ function magic_dev_magic($magic_settings, $theme) {
       '#type' => 'checkbox',
       '#title' => t('Modernizr Indicator'),
       '#description' => t('Displays an indicator of !modernizr detected features. Tap/click to toggle display of all of the available features. Install the !module for full Modernizr support. The CSS and JavaScript for this will bypass your CSS and JavaScript exclude options.', array('!modernizr' => l('Modernizr', 'http://modernizr.com/', $options), '!module' => l('Modernizr Drupal module', 'http://drupal.org/project/modernizr', $options))),
-      '#default_value' => theme_get_setting('magic_modernizr_debug', $theme),
-    );
-  }
-  else {
-    // We don't have modernizr :-(
-    $settings['dev']['magic_modernizr_debug'] = array(
-      '#type' => 'hidden',
-      '#value' => FALSE,
+      '#default_value' => theme_get_setting('magic_modernizr_debug'),
     );
   }
 
