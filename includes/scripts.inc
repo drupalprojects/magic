@@ -68,7 +68,7 @@ function magic_get_js($scope = 'header', $javascript = NULL, $skip_alter = FALSE
       $javascript[$js_key]['scope'] = 'header';
     }
 
-    if ($js_key == 'settings') {
+    if ($js_key == 'settings' && $library_head) {
       $javascript[$js_key]['scope'] = 'header';
     }
   }
