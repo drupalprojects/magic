@@ -5,6 +5,8 @@
  * Keep Frontend DRY; sprinkle it with MAGIC!
  */
 
+define('JS_SETTINGS', -90);
+
 /**
  * Implements hook_menu().
  */

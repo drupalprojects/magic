@@ -68,8 +68,14 @@ function magic_get_js($scope = 'header', $javascript = NULL, $skip_alter = FALSE
       $javascript[$js_key]['scope'] = 'header';
     }
 
-    if ($js_key == 'settings' && $library_head) {
-      $javascript[$js_key]['scope'] = 'header';
+    if ($js_key == 'settings') {
+      // We do this to ensure Drupal.settings comes after the libraries, but
+      // before module and theme JS.
+      $javascript[$js_key]['group'] = JS_SETTINGS;
+
+      if ($library_head) {
+        $javascript[$js_key]['scope'] = 'header';
+      }
     }
   }
 
@@ -81,7 +87,6 @@ function magic_get_js($scope = 'header', $javascript = NULL, $skip_alter = FALSE
     }
   }
 
-  $output = '';
   // The index counter is used to keep aggregated and non-aggregated files in
   // order by weight.
   $index = 1;
@@ -143,7 +148,10 @@ function magic_get_js($scope = 'header', $javascript = NULL, $skip_alter = FALSE
         $js_element['#value_prefix'] = $embed_prefix;
         $js_element['#value'] = 'jQuery.extend(Drupal.settings, ' . drupal_json_encode(drupal_array_merge_deep_array($item['data'])) . ");";
         $js_element['#value_suffix'] = $embed_suffix;
-        $output .= theme('html_tag', array('element' => $js_element));
+        // This is where Magic will deviate from the usual Drupal output. We
+        // need our settings to be after jQuery but before module JS, therefore
+        // we are going to treat it as a file or another inline file.
+        $processed[$index++] = theme('html_tag', array('element' => $js_element));
         break;
 
       case 'inline':
@@ -210,5 +218,5 @@ function magic_get_js($scope = 'header', $javascript = NULL, $skip_alter = FALSE
 
   // Keep the order of JS files consistent as some are preprocessed and others are not.
   // Make sure any inline or JS setting variables appear last after libraries have loaded.
-  return implode('', $processed) . $output;
+  return implode('', $processed);
 }
