@@ -8,6 +8,34 @@
 define('JS_SETTINGS', -90);
 
 /**
+ * This is purposefully outside of the scope of a function. It allows magic to
+ * alter the global $conf array before other module's code is executed.
+ */
+_magic_initialize_magic_vars();
+
+/**
+ * Alters the theme settings variables to include variables within settings.php.
+ *
+ * By adding $conf['magic']['your_theme_name'] to the settings.php, you can
+ * selectively alter some of the settings within your theme. This is important
+ * if you want to ensure livereload is always turned off on production, or leave
+ * some of your theme settings within code.
+ */
+function _magic_initialize_magic_vars() {
+  global $conf;
+
+  // Are we using the variable 'magic', and is it an array?
+  if (isset($conf['magic']) && is_array($conf['magic'])) {
+
+    // Go through each key, and add it to that theme's settings variable.
+    foreach ($conf['magic'] as $theme_key => $settings) {
+      $settings_var = 'theme_' . $theme_key . '_settings';
+      $conf[$settings_var] = isset($conf[$settings_var]) ? array_merge($conf[$settings_var], $settings) : $settings;
+    }
+  }
+}
+
+/**
  * Implements hook_menu().
  */
 function magic_menu() {
