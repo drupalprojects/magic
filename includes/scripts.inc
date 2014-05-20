@@ -119,7 +119,14 @@ function magic_get_js($scope = 'header', $javascript = NULL, $skip_alter = FALSE
   // used, information not otherwise available when aggregation is enabled.
   $setting['ajaxPageState']['js'] = array_fill_keys(array_keys($items), 1);
   unset($setting['ajaxPageState']['js']['settings']);
-  drupal_add_js($setting, 'setting');
+  if (isset($items['settings'])) {
+    // We are already printing out the settings, we need this too.
+    $items['settings']['data'][] = $setting;
+  }
+  else {
+    // This is Drupal's default behavior.
+    drupal_add_js($setting, 'setting');
+  }
 
   // If we're outputting the header scope, then this might be the final time
   // that drupal_get_js() is running, so add the setting to this output as well
