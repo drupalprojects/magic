@@ -68,7 +68,7 @@ function magic_get_js($scope = 'header', $javascript = NULL, $skip_alter = FALSE
       $javascript[$js_key]['scope'] = 'header';
     }
 
-    if ($js_key == 'settings') {
+    if ($js_key === 'settings') {
       // We do this to ensure Drupal.settings comes after the libraries, but
       // before module and theme JS.
       $javascript[$js_key]['group'] = JS_SETTINGS;
