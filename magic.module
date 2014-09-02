@@ -155,7 +155,12 @@ function magic_form_system_theme_settings_alter(&$form, &$form_state) {
 
   module_load_include('inc', 'magic', 'includes/magic.settings');
   $form_state['build_info']['files'][] = drupal_get_path('module', 'magic') . '/includes/magic.settings.inc';
-  $form = magic_form_system_theme_settings($form, $form_state, $form_state['build_info']['args'][0]);
+  magic_form_system_theme_settings($form, $form_state, $form_state['build_info']['args'][0]);
+
+  // Do we also have the magic_dev module enabled? Let's add that too...
+  if (module_exists('magic_dev')) {
+    magic_dev_form_system_theme_settings($form, $form_state, $form_state['build_info']['args'][0]);
+  }
 }
 
 /**

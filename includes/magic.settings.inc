@@ -6,9 +6,11 @@
  */
 
 /**
- * Implements hook_form_alter().
+ * Implements hook_form_alter()-ish.
+ *
+ * Called from within the magic.module's implementation for hook_form_alter.
  */
-function magic_form_system_theme_settings($form, &$form_state, $theme) {
+function magic_form_system_theme_settings(&$form, &$form_state, $theme) {
   // Magic Performance Vertical Tabs set
   $form['magic'] = array(
     '#type' => 'vertical_tabs',
