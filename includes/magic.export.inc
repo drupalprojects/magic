@@ -21,7 +21,7 @@ function magic_export_settings($form, &$form_state, $theme) {
   $form['info'] = array(
     '#type' => 'textarea',
     '#title' => t("Export for the theme's .info file", array('@theme' => $theme)),
-    '#description' => t("Make any changes you want and submit the form to overwrite the theme's .info file. If the file is saved correctly, the variable settings within the database will be automatically removed."),
+    '#description' => t("Make any changes you want and submit the form to overwrite the theme's .info file. Note: this will not overwrite settings set within the database, but will only allow documentation within code of settings."),
     '#rows' => 20,
     '#default_value' => _magic_build_info_file($info),
   );
@@ -29,7 +29,7 @@ function magic_export_settings($form, &$form_state, $theme) {
   $form['settings'] = array(
     '#type' => 'textarea',
     '#title' => t('Export for settings.php'),
-    '#description' => t('For a permanent settings override, manually copy and paste this into your settings.php file. If you do this, you cannot change the settings with the UI any longer.'),
+    '#description' => t('For a permanent settings override, manually copy and paste this into your settings.php file. If you do this, you cannot change the settings with the UI any longer. You may choose to only write some of the settings here, and not include everything in the settings.php.'),
     '#default_value' => _magic_build_settings_php_export($info, $theme),
   );
 
@@ -126,8 +126,11 @@ function _magic_build_info_file($array, $prefix = '') {
  *   The theme's settings array prepared for the settings.php file.
  */
 function _magic_build_settings_php_export($array, $theme) {
-  $export = '$conf[\'theme_' . $theme . '_settings\'] = ';
-  $export .= var_export($array['settings'], TRUE);
-  $export .= ';';
+  $export = '';
+
+  foreach ($array['settings'] as $name => $value) {
+    $export .= "\$conf['magic']['$theme']['$name'] = " . var_export($value, TRUE) . ";\n";
+  }
+
   return $export;
 }
