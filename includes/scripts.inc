@@ -45,6 +45,19 @@ function magic_get_js($scope = 'header', $javascript = NULL, $skip_alter = FALSE
     return '';
   }
 
+  // Are we doing Magic's exprimental JS handling?
+  $experimental = theme_get_setting('magic_experimental_js');
+
+  foreach ($javascript as &$js_value) {
+    // Add in some more defaults to the JavaScript options. This will not
+    // overwrite any settings that were already in, but we want to do it before
+    // we allow more alters.
+    $js_value += array(
+      'defer' => FALSE,
+      'async' => FALSE,
+    );
+  }
+
   // Allow modules to alter the JavaScript.
   if (!$skip_alter) {
     drupal_alter('js', $javascript);
@@ -113,7 +126,14 @@ function magic_get_js($scope = 'header', $javascript = NULL, $skip_alter = FALSE
   $js_version_string = variable_get('drupal_js_version_query_string', 'v=');
 
   // Sort the JavaScript so that it appears in the correct order.
-  uasort($items, 'drupal_sort_css_js');
+  if ($experimental) {
+    // This will sort the JS so that we use
+    uasort($items, 'magic_sort_css_js');
+  }
+  else {
+    uasort($items, 'drupal_sort_css_js');
+  }
+
 
   // Provide the page with information about the individual JavaScript files
   // used, information not otherwise available when aggregation is enabled.
@@ -175,9 +195,20 @@ function magic_get_js($scope = 'header', $javascript = NULL, $skip_alter = FALSE
       case 'file':
         $js_element = $element;
         if (!$item['preprocess'] || !$preprocess_js) {
+
           if ($item['defer']) {
             $js_element['#attributes']['defer'] = 'defer';
           }
+
+          if ($experimental) {
+
+
+            if ($item['async']) {
+              $js_element['#attributes']['async'] = 'async';
+            }
+          }
+
+
           $query_string_separator = (strpos($item['data'], '?') !== FALSE) ? '&' : '?';
           $js_element['#attributes']['src'] = file_create_url($item['data']) . $query_string_separator . ($item['cache'] ? $query_string : REQUEST_TIME);
           $processed[$index++] = theme('html_tag', array('element' => $js_element));
@@ -226,4 +257,66 @@ function magic_get_js($scope = 'header', $javascript = NULL, $skip_alter = FALSE
   // Keep the order of JS files consistent as some are preprocessed and others are not.
   // Make sure any inline or JS setting variables appear last after libraries have loaded.
   return implode('', $processed);
+}
+
+/**
+ * Sorts CSS and JavaScript resources.
+ *
+ * Callback for uasort() within:
+ * - drupal_get_css()
+ * - magic_experimental_js()
+ *
+ * This sort order helps optimize front-end performance while providing modules
+ * and themes with the necessary control for ordering the CSS and JavaScript
+ * appearing on a page.
+ *
+ * @param $a
+ *   First item for comparison. The compared items should be associative arrays
+ *   of member items from drupal_add_css() or magic_add_js().
+ * @param $b
+ *   Second item for comparison.
+ *
+ * @see drupal_add_css()
+ * @see magic_add_js()
+ */
+function magic_sort_css_js($a, $b) {
+  // First order by group, so that, for example, all items in the CSS_SYSTEM
+  // group appear before items in the CSS_DEFAULT group, which appear before
+  // all items in the CSS_THEME group. Modules may create additional groups by
+  // defining their own constants.
+  if (!empty($a['group']) && !empty($b['group'])) {
+    if ($a['group'] < $b['group']) {
+      return -1;
+    }
+    elseif ($a['group'] > $b['group']) {
+      return 1;
+    }
+  }
+
+  // Within a group, order all infrequently needed, page-specific files after
+  // common files needed throughout the website. Separating this way allows for
+  // the aggregate file generated for all of the common files to be reused
+  // across a site visit without being cut by a page using a less common file.
+  if (!empty($a['every_page']) && !empty($b['every_page'])) {
+    if ($a['every_page'] && !$b['every_page']) {
+      return -1;
+    }
+    elseif (!$a['every_page'] && $b['every_page']) {
+      return 1;
+    }
+  }
+
+  // Finally, order by weight.
+  if (!empty($a['weight']) && !empty($b['weight'])) {
+    if ($a['weight'] < $b['weight']) {
+      return -1;
+    }
+    elseif ($a['weight'] > $b['weight']) {
+      return 1;
+    }
+  }
+
+  else {
+    return 0;
+  }
 }
