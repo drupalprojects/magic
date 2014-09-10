@@ -203,12 +203,32 @@ function magic_template_process_html_override(&$variables) {
 }
 
 /**
- * Clears all cache entries maintained by this module.
+ * A helper function to clear the magic cache.
+ *
+ * @param mixed $theme (default: FALSE)
+ *   The theme name, or FALSE to delete all caches.
+ * @param array $types (default: array())
+ *   The type of caches to remove. May have an array keyed with 'css' or 'js' or
+ *   leave empty to clear both.
  */
-function magic_clear_cache() {
-  cache_clear_all(NULL, 'cache_magic');
-  cache_clear_all('magic:', 'cache', TRUE);
+function magic_clear_cache($theme = FALSE, $types = array()) {
+
+  if ($theme) {
+    // We are only clearing the cache for a specific theme, not all caches.
+    if (empty($types) || $types['css'] == TRUE) {
+      cache_clear_all("{$theme}:css:", 'cache_magic', TRUE);
+    }
+
+    if (empty($types) || $types['js'] == TRUE) {
+      cache_clear_all("{$theme}:js:",, 'cache_magic', TRUE);
+    }
+  }
+  else {
+    // No settings were passed, we will clear all caches.
+    cache_clear_all(NULL, 'cache_magic');
+  }
 }
+
 
 /**
  * Implements hook_flush_caches().
@@ -248,8 +268,11 @@ function magic_css_js_alter(&$data, $type = 'css') {
   }
 
   // We get the hash of the css array to check if it has been passed already.
-  $hash = hash('sha256', serialize($data));
+  // Note: we use md4 as it is nominally faster than other hashing methods, and
+  // as we only need matches, not security, it works just fine.
+  $hash = hash('md4', serialize($data));
   $cid = "{$GLOBALS['theme_key']}:{$type}:{$hash}";
+
   if ($cache = cache_get($cid, 'cache_magic')) {
     // We have this array cached, use it.
     $data = $cache->data;
@@ -257,12 +280,13 @@ function magic_css_js_alter(&$data, $type = 'css') {
   }
 
   module_load_include('inc', 'magic', 'includes/magic.assets');
-  if (!$cache = cache_get("{$setting}:{$GLOBALS['theme_key']}")) {
+  $regex_cid = "{$GLOBALS['theme_key']}:{$type}:runtime_excludes";
+  if (!$cache = cache_get($regex_cid, 'cache_magic')) {
     // Explode and trim the values for the exclusion rules.
     $items = array_filter(array_map('trim', explode("\n", $excludes)));
     $steps = magic_assets_regex_steps($items);
 
-    cache_set("{$setting}:{$GLOBALS['theme_key']}", $steps, CACHE_TEMPORARY);
+    cache_set($regex_cid, $steps, 'cache_magic', CACHE_TEMPORARY);
   }
   else {
     $steps = $cache->data;

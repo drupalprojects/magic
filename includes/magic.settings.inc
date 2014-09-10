@@ -97,14 +97,14 @@ function magic_form_system_theme_settings(&$form, &$form_state, $theme) {
 function magic_form_system_theme_settings_submit($form, &$form_state) {
   // Remove the active tab (vertical tabs) element from the settings array.
   unset($form_state['values']['magic__active_tab']);
+  $theme = $form_state['build_info']['args'][0];
 
   // If the triggering element is the 'export' button, redirect to the export
   // form.
   if ($form_state['triggering_element']['#value'] == t('Save and export configuration')) {
-    $theme = $form_state['build_info']['args'][0];
     $form_state['redirect'] = "admin/appearance/settings/$theme/export";
   }
 
   // Clear the cache entries maintained by this module.
-  magic_clear_cache();
+  magic_clear_cache($theme);
 }
