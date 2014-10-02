@@ -220,7 +220,7 @@ function magic_clear_cache($theme = FALSE, $types = array()) {
     }
 
     if (empty($types) || $types['js'] == TRUE) {
-      cache_clear_all("{$theme}:js:",, 'cache_magic', TRUE);
+      cache_clear_all("{$theme}:js:", 'cache_magic', TRUE);
     }
   }
   else {
