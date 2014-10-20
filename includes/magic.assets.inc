@@ -31,10 +31,10 @@ function magic_assets_prepare_regex($paths) {
   }
 
   $tokens = array(
-    ':core' => '(?:misc|modules|themes)',
-    ':contrib' => "(?:sites\\/all\\/modules|$site\\/modules|profiles\\/$profile\\/modules)",
-    ':current-theme' => preg_quote(drupal_get_path('theme', $GLOBALS['theme_key']), '/'),
-    ':base-theme' => $themes ? '(?:' . implode('|', $themes) . ')' : FALSE,
+    ':core' => '(?:misc|modules|themes)\/.+\.css',
+    ':contrib' => "(?:sites\\/all\\/modules|$site\\/modules|profiles\\/$profile\\/modules)\\/.+\\.css",
+    ':current-theme' => preg_quote(drupal_get_path('theme', $GLOBALS['theme_key']), '/') . "\\/.+\\.css",
+    ':base-theme' => $themes ? '(?:' . implode('|', $themes) . ')\\/.+\\.css' : FALSE,
   );
 
   foreach ($paths as &$item) {
