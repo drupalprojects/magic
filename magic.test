@@ -35,6 +35,9 @@ class MagicCSSTestCase extends DrupalUnitTestCase {
   }
 
   private function the_css_files($files = null) {
+    // Will grab the active theme.
+    $theme = drupal_get_path('theme', $GLOBALS['theme_key']);
+
     $css_files = array(
       'ctools' => array(
         'type' => 'file',
@@ -62,7 +65,7 @@ class MagicCSSTestCase extends DrupalUnitTestCase {
       ),
       'theme' => array(
         'type' => 'file',
-        'data' => 'sites/all/themes/theme_name/css/style.css',
+        'data' => $theme . '/css/style.css',
       ),
       'admin_menu' => array(
         'type' => 'file',
@@ -100,11 +103,13 @@ class MagicCSSTestCase extends DrupalUnitTestCase {
   public function testMagicCSSExcludes() {
     module_load_include('inc', 'magic', 'includes/magic.assets');
 
+
     // A set of trials for our CSS testing.
     $tests = array(
       array(
         'removal' => array(
           ':core',
+          '~:current-theme',
         ),
         'expected' => array(
           'ctools',
@@ -120,6 +125,7 @@ class MagicCSSTestCase extends DrupalUnitTestCase {
         'removal' => array(
           ':core',
           ':contrib',
+          '~:current-theme',
         ),
         'expected' => array(
           'theme',
@@ -132,7 +138,8 @@ class MagicCSSTestCase extends DrupalUnitTestCase {
         'removal' => array(
           ':core',
           ':contrib',
-          '~sites/all/modules/contrib/admin_menu*'
+          '~sites/all/modules/contrib/admin_menu*',
+          '~:current-theme',
         ),
         'expected' => array(
           'theme',
@@ -141,6 +148,17 @@ class MagicCSSTestCase extends DrupalUnitTestCase {
           'inline',
         ),
         'message' => 'Removing core and contrib css, but leave admin menu.',
+      ),
+      array(
+        'removal' => array(
+          ':all',
+          '~:current-theme',
+        ),
+        'expected' => array(
+          'theme',
+          'inline',
+        ),
+        'message' => 'Remove all CSS except for the current theme.',
       ),
     );
 
