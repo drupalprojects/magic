@@ -174,3 +174,122 @@ class MagicCSSTestCase extends DrupalUnitTestCase {
     }
   }
 }
+
+/**
+ * An even quicker test to ensure that we have the right CSS gets returned when
+ * we run our regex to selectively remove files.
+ *
+ * @see DrupalUnitTestCase
+ *
+ * @ingroup magic
+ */
+class MagicJSTestCase extends DrupalUnitTestCase {
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Magic JS Tests',
+      'description' => 'Ensure that our JS is removed or added appropriately.',
+      'group' => 'Magic',
+    );
+  }
+
+  /**
+   * Set up the test environment.
+   */
+  public function setUp() {
+    drupal_load('module', 'magic');
+    parent::setUp();
+  }
+
+  private function the_js_files($files = null) {
+    // Will grab the active theme.
+    $theme = drupal_get_path('theme', $GLOBALS['theme_key']);
+
+    $js_files = array(
+      'overlay' => array(
+        'type' => 'file',
+        'data' => 'modules/overlay/js/overlay.js',
+      ),
+      'ctools' => array(
+        'type' => 'file',
+        'data' => 'sites/all/modules/contrib/ctools/js/ctools.js',
+      ),
+      'theme' => array(
+        'type' => 'file',
+        'data' => $theme . '/js/main.js',
+      ),
+      'external' => array(
+        'type' => 'external',
+        'data' => '//external.file.com/folder/filename.js',
+      ),
+      'inline' => array(
+        'type' => 'inline',
+        'data' => 'jQuery();',
+      ),
+    );
+
+    $return = array();
+    if ($files == null) {
+      $files = array_keys($js_files);
+    }
+
+    foreach($js_files as $name => $data) {
+      if (in_array($name, $files)) {
+        $return[] = $data;
+      }
+    }
+
+    return $return;
+  }
+
+  /**
+   * Test magic_assets_exclude().
+   *
+   * Testing to see if our regex sends back the appropriate responses.
+   */
+  public function testMagicJSExcludes() {
+    module_load_include('inc', 'magic', 'includes/magic.assets');
+
+
+    // A set of trials for our CSS testing.
+    $tests = array(
+      array(
+        'removal' => array(
+          'overlay/*.js',
+        ),
+        'expected' => array(
+          'ctools',
+          'theme',
+          'external',
+          'inline',
+        ),
+        'message' => 'Ensuring the js removal also works',
+      ),
+      array(
+        'removal' => array(
+          ':all',
+          '~:current-theme',
+        ),
+        'expected' => array(
+          'theme',
+          'inline',
+        ),
+        'message' => 'Ensure the tokens work with JS',
+      ),
+    );
+
+    foreach ($tests as $test) {
+      $js = $this->the_js_files();
+      $expected = $this->the_js_files($test['expected']);
+      $steps = magic_assets_regex_steps($test['removal']);
+      magic_assets_exclude($js, $steps);
+      // We run this so that the array keys are the same.
+      $js = array_values($js);
+
+      $this->assertEqual($expected, $js, $test['message']);
+    }
+  }
+}
