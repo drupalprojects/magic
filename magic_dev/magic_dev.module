@@ -105,3 +105,23 @@ function magic_dev_process_html(&$vars) {
     }
   }
 }
+
+/**
+ * Implements hook_requirements().
+ */
+function magic_dev_requirements($phase) {
+  $requirements = array();
+  // Ensure translations don't break during installation.
+  $t = get_t();
+
+  if ($phase == 'runtime') {
+    $requirements['magic_dev'] = array(
+      'title' => $t('Magic Development'),
+      'value' => $t('Enabled'),
+      'description' => $t('Magic development module should never be enabled on production sites. Please disable for production environments.'),
+      'severity' => REQUIREMENT_WARNING,
+    );
+  }
+
+  return $requirements;
+}
