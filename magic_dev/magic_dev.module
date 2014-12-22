@@ -72,6 +72,8 @@ function magic_dev_preprocess_html(&$vars) {
   if (theme_get_setting('magic_viewport_indicator', $theme_key) || theme_get_setting('magic_modernizr_debug', $theme_key)) {
     drupal_add_css(drupal_get_path('module', 'magic_dev') . '/css/magic.debug.css');
     drupal_add_js(drupal_get_path('module', 'magic_dev') . '/js/magic.debug.js');
+    // Adding a class to the body element.
+    $vars['classes_array'][] = 'magic-indicator';
   }
 }
 
